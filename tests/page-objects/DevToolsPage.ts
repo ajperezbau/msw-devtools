@@ -25,6 +25,12 @@ export class DevToolsPage {
     await this.toggleButton.click();
   }
 
+  async pressShortcut() {
+    const isMac = process.platform === "darwin";
+    const modifier = isMac ? "Meta" : "Control";
+    await this.page.keyboard.press(`${modifier}+Shift+M`);
+  }
+
   async close() {
     await this.closeButton.click();
   }

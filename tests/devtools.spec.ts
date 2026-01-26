@@ -23,6 +23,16 @@ test.describe("MSW DevTools Plugin", () => {
     await devToolsPage.expectModalTitle("MSW Handler Registry");
   });
 
+  test("should open the devtools modal using the keyboard shortcut", async () => {
+    await devToolsPage.pressShortcut();
+    await devToolsPage.expectModalVisible();
+    await devToolsPage.expectModalTitle("MSW Handler Registry");
+
+    // Toggle off with the same shortcut
+    await devToolsPage.pressShortcut();
+    await devToolsPage.expectModalHidden();
+  });
+
   test("should close the devtools modal when clicking the close button", async () => {
     await devToolsPage.toggle();
     await devToolsPage.expectModalVisible();
