@@ -1,0 +1,421 @@
+import {
+  http,
+  HttpResponse,
+  type DefaultBodyType,
+  type HttpResponseResolver,
+} from "msw";
+import { reactive, ref, watch } from "vue";
+
+const STORAGE_KEY = "msw-scenarios";
+const DELAY_KEY = "msw-delay";
+const HANDLER_DELAY_KEY = "msw-handler-delays";
+const OVERRIDES_KEY = "msw-overrides";
+const CUSTOM_SCENARIOS_KEY = "msw-custom-scenarios";
+
+const getPersistedScenarios = (): Record<string, string> => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+const getPersistedHandlerDelays = (): Record<string, number> => {
+  try {
+    const stored = localStorage.getItem(HANDLER_DELAY_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+interface CustomOverride {
+  body: string;
+  status: number;
+  enabled: boolean;
+}
+
+const getPersistedOverrides = (): Record<string, CustomOverride> => {
+  try {
+    const stored = localStorage.getItem(OVERRIDES_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+interface CustomScenario {
+  body: string;
+  status: number;
+}
+
+const getPersistedCustomScenarios = (): Record<
+  string,
+  Record<string, CustomScenario>
+> => {
+  try {
+    const stored = localStorage.getItem(CUSTOM_SCENARIOS_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+export const scenarioState = reactive<Record<string, string>>(
+  getPersistedScenarios(),
+);
+export const handlerDelays = reactive<Record<string, number>>(
+  getPersistedHandlerDelays(),
+);
+export const customOverrides = reactive<Record<string, CustomOverride>>(
+  getPersistedOverrides(),
+);
+export const customScenarios = reactive<
+  Record<string, Record<string, CustomScenario>>
+>(getPersistedCustomScenarios());
+export const globalDelay = ref(Number(localStorage.getItem(DELAY_KEY)) || 0);
+
+interface HandlerMetadata {
+  url: string;
+  method: string;
+  scenarios: string[];
+}
+
+export interface LogEntry {
+  id: string;
+  timestamp: number;
+  key: string;
+  scenario: string;
+  method: string;
+  url: string;
+  status: number;
+  responseBody?: unknown;
+  requestBody?: unknown;
+}
+
+export const scenarioRegistry = reactive<Record<string, HandlerMetadata>>({});
+export const activityLog = reactive<LogEntry[]>([]);
+
+interface RegisteredHandler {
+  key: string;
+  factory: (resolver: (url: string) => string) => any;
+  priority: number;
+}
+
+let mswInstance: { resetHandlers: (...handlers: any[]) => void } | null = null;
+const registeredHandlers: RegisteredHandler[] = [];
+let baseHandlers: any[] = [];
+let urlResolver: (url: string) => string = (url) => url;
+
+export const setupMswRegistry = (
+  instance: any,
+  initialHandlers: any[] = [],
+  resolver?: (url: string) => string,
+) => {
+  mswInstance = instance;
+  baseHandlers = initialHandlers;
+  if (resolver) urlResolver = resolver;
+  refreshHandlers();
+};
+
+const refreshHandlers = () => {
+  if (!mswInstance) return;
+
+  // Sort by priority (higher first). MSW matches in order of provided handlers.
+  const sorted = [...registeredHandlers].sort(
+    (a, b) => b.priority - a.priority,
+  );
+  const handlers = sorted.map((h) => h.factory(urlResolver));
+  mswInstance.resetHandlers(...handlers, ...baseHandlers);
+};
+
+export const clearActivityLog = () => {
+  activityLog.length = 0;
+};
+
+const BUILT_IN_SCENARIOS: Record<string, HttpResponseResolver> = {
+  ServerError: () => new HttpResponse(null, { status: 500 }),
+};
+
+type BuiltInScenario = keyof typeof BUILT_IN_SCENARIOS;
+
+// Persistir cambios en localStorage
+watch(
+  scenarioState,
+  (newState) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+  },
+  { deep: true },
+);
+
+watch(
+  handlerDelays,
+  (newDelays) => {
+    localStorage.setItem(HANDLER_DELAY_KEY, JSON.stringify(newDelays));
+  },
+  { deep: true },
+);
+
+watch(
+  customOverrides,
+  (newOverrides) => {
+    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(newOverrides));
+  },
+  { deep: true },
+);
+
+watch(
+  customScenarios,
+  (newScenarios) => {
+    localStorage.setItem(CUSTOM_SCENARIOS_KEY, JSON.stringify(newScenarios));
+  },
+  { deep: true },
+);
+
+watch(globalDelay, (newDelay) => {
+  localStorage.setItem(DELAY_KEY, String(newDelay));
+});
+
+/**
+ * Fluent builder for MSW handlers
+ */
+export class MswHandlerBuilder<T extends string = "default"> {
+  private _key: string;
+  private _url: string = "";
+  private _method: "get" | "post" | "put" | "delete" = "get";
+  private _scenarios: Record<string, HttpResponseResolver> = {
+    ...BUILT_IN_SCENARIOS,
+  };
+  private _defaultScenario: string = "default";
+  private _priority: number = 0;
+
+  constructor(key: string) {
+    this._key = key;
+  }
+
+  url(value: string) {
+    this._url = value;
+    return this;
+  }
+
+  priority(value: number) {
+    this._priority = value;
+    return this;
+  }
+
+  method(value: "get" | "post" | "put" | "delete") {
+    this._method = value;
+    return this;
+  }
+
+  defaultScenario(value: T | BuiltInScenario) {
+    this._defaultScenario = value;
+    return this;
+  }
+
+  scenario<S extends string>(
+    name: S,
+    resolver: HttpResponseResolver,
+  ): MswHandlerBuilder<T | S> {
+    this._scenarios[name] = resolver;
+    return this as unknown as MswHandlerBuilder<T | S>;
+  }
+
+  build() {
+    const key = this._key;
+    const url = this._url;
+    const method = this._method;
+    const scenarios = this._scenarios;
+    const defaultScenario = this._defaultScenario;
+    const priority = this._priority;
+
+    // Registrar metadatos
+    scenarioRegistry[key] = {
+      url,
+      method: method.toUpperCase(),
+      scenarios: [
+        ...Object.keys(scenarios),
+        ...Object.keys(customScenarios[key] || {}),
+      ].filter((v, i, a) => a.indexOf(v) === i), // Unificar y evitar duplicados
+    };
+
+    // Inicializar estado si no existe (URL tiene prioridad sobre persistencia)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlValue = urlParams.get(key);
+
+    if (urlValue) {
+      scenarioState[key] = urlValue;
+    } else if (!scenarioState[key]) {
+      scenarioState[key] = defaultScenario;
+    }
+
+    // Inicializar delay si no existe
+    if (handlerDelays[key] === undefined) {
+      handlerDelays[key] = 0;
+    }
+
+    const factory = (resolver: (url: string) => string) =>
+      http[method](resolver(url), async (info: any) => {
+        const { request } = info;
+        const currentUrlParams = new URLSearchParams(window.location.search);
+        const activeScenarioKey =
+          currentUrlParams.get(key) || scenarioState[key] || defaultScenario;
+
+        const override = customOverrides[key];
+
+        let response: HttpResponse<DefaultBodyType> | undefined;
+
+        if (override?.enabled) {
+          try {
+            const body = JSON.parse(override.body);
+            response = HttpResponse.json(body, { status: override.status });
+          } catch {
+            response = new HttpResponse(override.body, {
+              status: override.status,
+              headers: { "Content-Type": "text/plain" },
+            });
+          }
+        }
+
+        if (!response) {
+          const customScenario = customScenarios[key]?.[activeScenarioKey];
+
+          if (customScenario) {
+            try {
+              const body = JSON.parse(customScenario.body);
+              response = HttpResponse.json(body, {
+                status: customScenario.status,
+              });
+            } catch {
+              response = new HttpResponse(customScenario.body, {
+                status: customScenario.status,
+                headers: { "Content-Type": "text/plain" },
+              });
+            }
+          } else {
+            const resolver = scenarios[activeScenarioKey];
+
+            if (!resolver) {
+              // eslint-disable-next-line no-console
+              console.warn(
+                `[MswRegistry] Escenario '${activeScenarioKey}' no encontrado para '${key}'`,
+              );
+              response = new HttpResponse(null, { status: 404 });
+            } else {
+              response = (await resolver(
+                info,
+              )) as HttpResponse<DefaultBodyType>;
+            }
+          }
+        }
+
+        // Capture request body (cloning to avoid consuming the stream)
+        let requestBody: unknown;
+        try {
+          const clonedRequest = request.clone();
+          const contentType = clonedRequest.headers.get("content-type");
+          if (contentType?.includes("application/json")) {
+            requestBody = await clonedRequest.json();
+          } else {
+            const text = await clonedRequest.text();
+            requestBody = text || undefined;
+          }
+        } catch {
+          requestBody = undefined;
+        }
+
+        const activeDelay =
+          (handlerDelays[key] ?? 0) > 0
+            ? handlerDelays[key]
+            : globalDelay.value;
+        if (activeDelay && activeDelay > 0) {
+          await new Promise((resolve) => setTimeout(resolve, activeDelay));
+        }
+
+        if (response instanceof HttpResponse) {
+          // Capture response body (cloning to avoid consuming the stream)
+          let responseBody: unknown;
+          try {
+            const clonedResponse = response.clone();
+            const contentType = clonedResponse.headers.get("content-type");
+            if (contentType?.includes("application/json")) {
+              responseBody = await clonedResponse.json();
+            } else {
+              const text = await clonedResponse.text();
+              responseBody = text || undefined;
+            }
+          } catch {
+            responseBody = undefined;
+          }
+
+          activityLog.unshift({
+            id: Math.random().toString(36).substring(2),
+            timestamp: Date.now(),
+            key,
+            scenario: override?.enabled ? "Manual Override" : activeScenarioKey,
+            method: method.toUpperCase(),
+            url: request.url,
+            status: response.status,
+            requestBody,
+            responseBody,
+          });
+
+          if (activityLog.length > 100) {
+            activityLog.pop();
+          }
+        }
+
+        return response;
+      });
+
+    // Registrar en el listado global
+    registeredHandlers.push({ key, factory, priority });
+
+    // Si ya tenemos instancia de MSW, refrescar
+    if (mswInstance) {
+      refreshHandlers();
+    }
+
+    return factory(urlResolver);
+  }
+}
+
+export const register = (key: string) => new MswHandlerBuilder(key);
+
+/**
+ * @deprecated Use register(key).url(url).scenario(...).build() instead
+ */
+export const createOrchestratedHandler = <
+  T extends string,
+  D extends T | BuiltInScenario,
+>(
+  key: string,
+  definition: {
+    url: string;
+    method?: "get" | "post" | "put" | "delete";
+    scenarios: Record<T, HttpResponseResolver>;
+    defaultScenario?: D;
+  },
+) => {
+  const {
+    url,
+    method = "get",
+    scenarios,
+    defaultScenario = "default" as D,
+  } = definition;
+
+  let builder = register(key)
+    .url(url)
+    .method(method)
+    .defaultScenario(defaultScenario);
+
+  Object.entries(scenarios).forEach(([name, resolver]) => {
+    builder = builder.scenario(name, resolver as HttpResponseResolver);
+  });
+
+  return builder.build();
+};
+
+// Backward compatibility alias
+export const createScenarioHandler = createOrchestratedHandler;
