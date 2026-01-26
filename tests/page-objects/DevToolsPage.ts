@@ -7,6 +7,7 @@ export class DevToolsPage {
   readonly closeButton: Locator;
   readonly registryTable: Locator;
   readonly searchInput: Locator;
+  readonly globalDelayInput: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -19,6 +20,23 @@ export class DevToolsPage {
     this.searchInput = this.dialog.getByPlaceholder(
       "Filter by key, URL or method...",
     );
+    this.globalDelayInput = this.dialog.locator("#global-delay");
+  }
+
+  async setGlobalDelay(value: number) {
+    // We use fill for sliders if they are range inputs, but sliders sometimes need more specific interaction
+    // Since it's a native range input, fill should work, but evaluate is safer for reactivity
+    await this.globalDelayInput.evaluate((el: HTMLInputElement, val) => {
+      el.value = val.toString();
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }, value);
+  }
+
+  async setHandlerDelay(handlerName: string, value: number) {
+    const row = await this.getHandlerRow(handlerName);
+    const input = row.locator(".handler-delay-input");
+    await input.fill(value.toString());
   }
 
   async filter(query: string) {
@@ -45,6 +63,27 @@ export class DevToolsPage {
 
   async close() {
     await this.closeButton.click();
+  }
+
+  async startDelayedFetch(url: string) {
+    await this.page.evaluate((fetchUrl) => {
+      (window as any).fetchFinished = false;
+      fetch(fetchUrl).then(() => {
+        (window as any).fetchFinished = true;
+      });
+    }, url);
+  }
+
+  async isFetchFinished() {
+    return await this.page.evaluate(() => (window as any).fetchFinished);
+  }
+
+  async waitForFetchFinished(timeout = 2000) {
+    await expect
+      .poll(async () => this.isFetchFinished(), {
+        timeout,
+      })
+      .toBe(true);
   }
 
   async expectVisible() {

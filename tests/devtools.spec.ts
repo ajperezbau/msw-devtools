@@ -102,4 +102,34 @@ test.describe("MSW DevTools Plugin", () => {
       devToolsPage.dialog.locator("tr", { hasText: "products" }),
     ).toBeVisible();
   });
+
+  test("should apply per-handler delay", async () => {
+    await devToolsPage.toggle();
+    const delay = 1000;
+    await devToolsPage.setHandlerDelay("users", delay);
+
+    // Check delay using semaphore pattern from page object
+    await devToolsPage.startDelayedFetch("/api/users");
+
+    // Should NOT be finished immediately
+    expect(await devToolsPage.isFetchFinished()).toBe(false);
+
+    // Should be finished after the delay
+    await devToolsPage.waitForFetchFinished(2000);
+  });
+
+  test("should apply global delay when handler delay is 0", async () => {
+    await devToolsPage.toggle();
+    const delay = 1000;
+    await devToolsPage.setGlobalDelay(delay);
+
+    // Check delay using semaphore pattern from page object
+    await devToolsPage.startDelayedFetch("/api/users");
+
+    // Should NOT be finished immediately
+    expect(await devToolsPage.isFetchFinished()).toBe(false);
+
+    // Should be finished after the delay
+    await devToolsPage.waitForFetchFinished(2000);
+  });
 });
