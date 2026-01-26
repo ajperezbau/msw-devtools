@@ -5,6 +5,7 @@
       @click="isOpen = !isOpen"
       class="toggle-button"
       title="MSW Handler Registry (Ctrl + Shift + M)"
+      aria-label="Toggle MSW DevTools"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -29,9 +30,16 @@
     </button>
 
     <div v-if="isOpen" class="modal-backdrop" @click.self="isOpen = false">
-      <div class="modal-content">
+      <div
+        class="modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="msw-devtools-title"
+      >
         <div class="panel-header">
-          <h2 class="panel-title">MSW Handler Registry</h2>
+          <h2 id="msw-devtools-title" class="panel-title">
+            MSW Handler Registry
+          </h2>
           <div class="tab-buttons">
             <button
               type="button"
