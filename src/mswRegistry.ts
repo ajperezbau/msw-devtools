@@ -114,12 +114,21 @@ export const setupMswRegistry = (
   resolver?: (url: string) => string,
 ) => {
   mswInstance = instance;
-  baseHandlers = initialHandlers;
   if (resolver) urlResolver = resolver;
 
   // Auto-discover handlers already present in MSW
   if (typeof instance.listHandlers === "function") {
     const existingHandlers = instance.listHandlers();
+
+    // If no initial handlers provided, we capture everything that we won't be managing
+    if (initialHandlers.length === 0) {
+      baseHandlers = existingHandlers.filter(
+        (h: any) => !h.info || !h.info.path,
+      );
+    } else {
+      baseHandlers = initialHandlers;
+    }
+
     existingHandlers.forEach((handler: any) => {
       // Small check to avoid internal or already managed handlers
       if (!handler.info || !handler.info.path) return;
@@ -133,6 +142,7 @@ export const setupMswRegistry = (
           .url(path)
           .method(method.toLowerCase())
           .scenario("original", handler.resolver || handler.run)
+          .defaultScenario("original")
           .build();
       }
     });
@@ -241,6 +251,12 @@ export class MswHandlerBuilder<T extends string = "default"> {
     resolver: HttpResponseResolver,
   ): MswHandlerBuilder<T | S> {
     this._scenarios[name] = resolver;
+
+    // If no default scenario was set and this isn't "default", make it the default
+    if (this._defaultScenario === "default" && name !== "default") {
+      this._defaultScenario = name;
+    }
+
     return this as unknown as MswHandlerBuilder<T | S>;
   }
 
@@ -332,7 +348,20 @@ export class MswHandlerBuilder<T extends string = "default"> {
               });
             }
           } else {
-            const resolver = scenarios[activeScenarioKey];
+            let resolver = scenarios[activeScenarioKey];
+
+            // Fallback to default scenario if active one doesn't exist
+            if (!resolver && activeScenarioKey !== defaultScenario) {
+              resolver = scenarios[defaultScenario];
+            }
+
+            // Final fallback to any available scenario if default one also doesn't exist
+            if (!resolver) {
+              const firstAvailableKey = Object.keys(scenarios)[0];
+              if (firstAvailableKey) {
+                resolver = scenarios[firstAvailableKey];
+              }
+            }
 
             if (!resolver) {
               // eslint-disable-next-line no-console
