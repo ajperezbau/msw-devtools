@@ -250,10 +250,15 @@ export class MswHandlerBuilder<T extends string = "default"> {
     name: S,
     resolver: HttpResponseResolver,
   ): MswHandlerBuilder<T | S> {
+    const hadDefaultScenario = Boolean(this._scenarios.default);
     this._scenarios[name] = resolver;
 
     // If no default scenario was set and this isn't "default", make it the default
-    if (this._defaultScenario === "default" && name !== "default") {
+    if (
+      this._defaultScenario === "default" &&
+      name !== "default" &&
+      !hadDefaultScenario
+    ) {
       this._defaultScenario = name;
     }
 
