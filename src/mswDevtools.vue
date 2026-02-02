@@ -19,25 +19,21 @@
       :class="{ 'is-dragging': isDragging }"
     >
       <svg
-        viewBox="0 0 100 100"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
         class="msw-logo-svg"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 128 128"
       >
-        <path
-          d="M86.1306 20.3541C86.1306 13.123 79.9914 7.26416 72.4187 7.26416L24.5828 7.26416C16.8927 7.3751 10.999 13.9103 11 21.6004L11 78.3996C11.0019 86.4168 17.5053 92.91 25.5226 92.9L73.1818 92.9C80.3204 92.9 86.1306 87.0898 86.1306 79.9512V20.3541Z"
-          fill="black"
-        />
-        <path
-          fill-rule="evenodd"
-          clip-rule="evenodd"
-          d="M33.8647 31.2583C30.6811 31.2583 28.1004 33.839 28.1004 37.0227V64.9184C28.1004 68.102 30.6811 70.6828 33.8647 70.6828H61.7604C64.9441 70.6828 67.5248 68.102 67.5248 64.9184V37.0227C67.5248 33.839 64.9441 31.2583 61.7604 31.2583H33.8647ZM20.4573 37.1066C20.4573 29.7042 26.4623 23.7001 33.8647 23.7001H61.7604C69.1628 23.7001 75.1678 29.7042 75.1678 37.1066V64.9184C75.1678 72.3217 69.1628 78.3249 61.7604 78.3249H33.8647C26.4623 78.3249 20.4573 72.3217 20.4573 64.9184V37.1066Z"
-          fill="#FF6A33"
-        />
-        <path
-          d="M20.8427 33.5113C18.2307 28.8576 21.5835 23.001 26.9366 23.001H74.4566C81.6521 23.001 87.4851 28.834 87.4851 36.0295V55.6025C87.4851 60.9575 81.6256 64.3079 76.972 61.6931L31.3255 36.0449L20.8427 33.5113Z"
-          fill="#FF6A33"
-        />
+        <g fill="none" fill-rule="nonzero">
+          <rect width="128" height="128" fill="#000" rx="24"></rect>
+          <path
+            fill="#7A1818"
+            d="M25.52 45.538a19.62 19.62 0 0 1 7.165-13.23 19.62 19.62 0 0 1 14.423-4.289 19.66 19.66 0 0 1 12.574 6.399l33.9 37.648a19.62 19.62 0 0 1 5.022 14.184 19.62 19.62 0 0 1-6.478 13.58 19.66 19.66 0 0 1-13.174 5.05L33 104.832a12.3 12.3 0 0 1-8.705-3.615 12.3 12.3 0 0 1-3.598-8.712v-.46zm18.508.746c-.346.28-.558.665-.605 1.113l-4.09 39.442 39.637.04c.36 0 .708-.115.993-.328l.119-.097c.337-.304.523-.701.547-1.146.023-.445-.12-.86-.424-1.197l-33.9-37.649a1.66 1.66 0 0 0-1.06-.54 1.63 1.63 0 0 0-1.217.362"
+          ></path>
+          <path
+            fill="#FF6A33"
+            d="m32.53 23.103 62.47.065a12.3 12.3 0 0 1 8.705 3.616 12.3 12.3 0 0 1 3.598 8.711v.461l-.048.459-6.484 62.477a12.3 12.3 0 0 1-4.49 8.287 12.315 12.315 0 0 1-16.912-1.322L23.367 43.66a12.3 12.3 0 0 1-3.146-8.885 12.315 12.315 0 0 1 12.31-11.67m12.767 18.012 38.89 43.192 4.478-43.147z"
+          ></path>
+        </g>
       </svg>
     </button>
 
@@ -1280,23 +1276,22 @@ const filteredActivityLog = computed(() => {
 }
 
 .toggle-button {
-  background-color: #1a1a1a;
-  color: white;
-  padding: 10px;
+  background-color: #000;
+  padding: 6px;
   border-radius: 12px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-  border: 4px solid #333;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.4),
+    0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  border: 1px solid #27272a;
   cursor: move;
-  transition:
-    transform 0.2s,
-    background-color 0.2s,
-    border-color 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
   touch-action: none;
-  width: 60px;
-  height: 60px;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
 }
 
 .msw-logo-svg {
@@ -1307,14 +1302,23 @@ const filteredActivityLog = computed(() => {
 .toggle-button.is-dragging {
   cursor: grabbing;
   transform: scale(1.1);
-  opacity: 0.9;
+  opacity: 1;
   border-color: #ff6a33;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.5),
+    0 10px 10px -5px rgba(0, 0, 0, 0.3);
 }
 
 .toggle-button:hover {
-  background-color: #000;
   border-color: #ff6a33;
-  transform: scale(1.05);
+  transform: scale(1.08) translateY(-2px);
+  box-shadow:
+    0 12px 20px -5px rgba(0, 0, 0, 0.5),
+    0 4px 6px -2px rgba(0, 0, 0, 0.3);
+}
+
+.toggle-button:active {
+  transform: scale(0.95);
 }
 
 .modal-backdrop {
@@ -1341,6 +1345,29 @@ const filteredActivityLog = computed(() => {
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--border-color);
+}
+
+.modal-content * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-tertiary) transparent;
+}
+
+.modal-content *::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.modal-content *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-content *::-webkit-scrollbar-thumb {
+  background-color: var(--bg-tertiary);
+  border-radius: 20px;
+}
+
+.modal-content *::-webkit-scrollbar-thumb:hover {
+  background-color: var(--border-color);
 }
 
 .panel-header {
