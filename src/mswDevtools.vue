@@ -14,7 +14,7 @@
       @touchstart="startDrag"
       @click="toggleDevtools"
       class="toggle-button"
-      title="MSW Handler Registry (Ctrl + Shift + M)"
+      title="MSW Devtools (Ctrl + Shift + M)"
       aria-label="Toggle MSW DevTools"
       :class="{ 'is-dragging': isDragging }"
     >
@@ -46,9 +46,7 @@
         aria-labelledby="msw-devtools-title"
       >
         <div class="panel-header">
-          <h2 id="msw-devtools-title" class="panel-title">
-            MSW Handler Registry
-          </h2>
+          <h2 id="msw-devtools-title" class="panel-title">MSW Devtools</h2>
           <div class="tab-buttons">
             <button
               type="button"

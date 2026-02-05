@@ -13,20 +13,20 @@ test.describe("MSW DevTools Plugin", () => {
     await devToolsPage.expectVisible();
     await expect(devToolsPage.toggleButton).toHaveAttribute(
       "title",
-      /MSW Handler Registry/,
+      /MSW Devtools/,
     );
   });
 
   test("should open the devtools modal when clicking the toggle button", async () => {
     await devToolsPage.toggle();
     await devToolsPage.expectModalVisible();
-    await devToolsPage.expectModalTitle("MSW Handler Registry");
+    await devToolsPage.expectModalTitle("MSW Devtools");
   });
 
   test("should open the devtools modal using the keyboard shortcut", async () => {
     await devToolsPage.pressShortcut();
     await devToolsPage.expectModalVisible();
-    await devToolsPage.expectModalTitle("MSW Handler Registry");
+    await devToolsPage.expectModalTitle("MSW Devtools");
 
     // Toggle off with the same shortcut
     await devToolsPage.pressShortcut();
