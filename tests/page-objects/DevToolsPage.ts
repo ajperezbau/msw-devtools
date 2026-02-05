@@ -9,6 +9,8 @@ export class DevToolsPage {
   readonly searchInput: Locator;
   readonly globalDelayInput: Locator;
   readonly globalDelayNumberInput: Locator;
+  readonly exportButton: Locator;
+  readonly importButton: Locator;
   readonly fetchUsersButton: Locator;
   readonly fetchProductsButton: Locator;
 
@@ -27,6 +29,8 @@ export class DevToolsPage {
     this.globalDelayNumberInput = this.dialog.getByLabel(
       "Global delay in milliseconds",
     );
+    this.exportButton = this.dialog.getByRole("button", { name: "Export" });
+    this.importButton = this.dialog.getByRole("button", { name: "Import" });
     this.fetchUsersButton = page.getByRole("button", { name: /Fetch Users/ });
     this.fetchProductsButton = page.getByRole("button", {
       name: /Fetch Products/,
@@ -191,5 +195,39 @@ export class DevToolsPage {
     const entry = await this.getLogEntry(url);
     const sectionLocator = entry.getByRole("region", { name: section });
     await expect(sectionLocator).toContainText(content);
+  }
+
+  // Export/Import methods
+  async openExportDialog() {
+    await this.exportButton.click();
+  }
+
+  async expectExportOption(label: string, checked: boolean) {
+    const checkbox = this.dialog
+      .locator("label", { hasText: label })
+      .locator('input[type="checkbox"]');
+    if (checked) {
+      await expect(checkbox).toBeChecked();
+    } else {
+      await expect(checkbox).not.toBeChecked();
+    }
+  }
+
+  async toggleExportOption(label: string) {
+    await this.dialog.locator("label", { hasText: label }).click();
+  }
+
+  async downloadExport() {
+    const downloadPromise = this.page.waitForEvent("download");
+    await this.dialog.getByRole("button", { name: "Download JSON" }).click();
+    return await downloadPromise;
+  }
+
+  async importFile(filePath: string) {
+    // The input is hidden, so we need to set the files on the input that is triggered by the button
+    const fileChooserPromise = this.page.waitForEvent("filechooser");
+    await this.importButton.click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(filePath);
   }
 }

@@ -96,6 +96,12 @@ test.describe("MSW DevTools Plugin", () => {
     await expect(await devToolsPage.getHandlerRow("products")).toBeVisible();
   });
 
+  test("should show export and import buttons", async () => {
+    await devToolsPage.toggle();
+    await expect(devToolsPage.exportButton).toBeVisible();
+    await expect(devToolsPage.importButton).toBeVisible();
+  });
+
   // TODO: those tests are flaky/hard to stabilize, review in another moment
   test("should apply per-handler delay", async ({ page }) => {
     await devToolsPage.toggle();
