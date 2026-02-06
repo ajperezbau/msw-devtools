@@ -1773,7 +1773,11 @@ const isCustomScenario = (key: string, scenario: string) => {
 };
 
 const displayKey = (key: string) => {
-  return key.replace(/^\[[A-Z]+\]\s+/, "");
+  const handler = scenarioRegistry[key];
+  if (handler?.isNative) {
+    return key.replace(/^\[[A-Z]+\]\s+/, "");
+  }
+  return key;
 };
 
 watch(isOpen, (newValue) => {

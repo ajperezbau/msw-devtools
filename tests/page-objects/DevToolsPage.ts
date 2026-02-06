@@ -154,6 +154,17 @@ export class DevToolsPage {
   }
 
   async getHandlerRow(name: string) {
+    // For native handlers with format [METHOD] /path
+    if (name.startsWith("[")) {
+      const match = name.match(/^\[([A-Z]+)\]\s+(.+)$/);
+      if (match) {
+        const [_, method, path] = match;
+        return this.registryTable
+          .getByRole("row")
+          .filter({ hasText: method })
+          .filter({ hasText: path });
+      }
+    }
     return this.registryTable.getByRole("row", { name });
   }
 
@@ -161,9 +172,8 @@ export class DevToolsPage {
     const row = await this.getHandlerRow(name);
     await expect(row).toBeVisible();
     await expect(row.getByText(method, { exact: true })).toBeVisible();
-    await expect(
-      row.locator(".url-wrapper").getByText(url, { exact: true }),
-    ).toBeVisible();
+    // URL might appear twice (in key column and url column), so we take the first one
+    await expect(row.getByText(url, { exact: true }).first()).toBeVisible();
   }
 
   async expectScenario(handlerName: string, scenarioName: string) {

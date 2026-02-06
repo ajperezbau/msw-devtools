@@ -156,20 +156,23 @@ export const setupMswRegistry = (
 
       const { path, method } = handler.info;
       const methodUpper = method.toUpperCase();
+      const methodLower = method.toLowerCase();
 
-      // Check if already managed (by exact key or by url+method combination)
-      const isAlreadyManaged =
-        registeredHandlers.some((h) => h.key === path) ||
-        Object.values(scenarioRegistry).some(
-          (m) => m.url === path && m.method === methodUpper,
-        );
+      // Only support standard HTTP methods for auto-discovery
+      const supportedMethods = ["get", "post", "put", "delete", "patch"];
+      if (!supportedMethods.includes(methodLower)) return;
+
+      // Check if already managed by url+method combination
+      const isAlreadyManaged = Object.values(scenarioRegistry).some(
+        (m) => m.url === path && m.method === methodUpper,
+      );
 
       if (!isAlreadyManaged) {
         // Use a composite key [METHOD] path for native handlers to avoid collisions
         const key = `[${methodUpper}] ${path}`;
         register(key)
           .url(path)
-          .method(method.toLowerCase() as any)
+          .method(methodLower as any)
           .native(true)
           .scenario("original", handler.resolver || handler.run)
           .defaultScenario("original")
