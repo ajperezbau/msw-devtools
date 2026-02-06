@@ -29,6 +29,9 @@ const worker = setupWorker(
   http.get("/api/status", () => {
     return HttpResponse.json({ status: "ok", timestamp: Date.now() });
   }),
+  http.post("/api/status", () => {
+    return HttpResponse.json({ success: true });
+  }),
 );
 await worker.start();
 

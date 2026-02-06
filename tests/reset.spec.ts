@@ -19,12 +19,12 @@ test.describe("MSW DevTools - Reset All", () => {
 
     // 2. Setup states for native handler
     // Create a custom scenario for native handler to have something to reset from
-    await devToolsPage.openOverrideModal("/api/status");
+    await devToolsPage.openOverrideModal("[GET] /api/status");
     await devToolsPage.fillOverrideBody(JSON.stringify({ status: "custom" }));
     await devToolsPage.saveOverride("Custom Status");
 
     // Verify it changed to the new custom scenario
-    const nativeRow = await devToolsPage.getHandlerRow("/api/status");
+    const nativeRow = await devToolsPage.getHandlerRow("[GET] /api/status");
     await expect(nativeRow.getByRole("combobox")).toHaveValue("Custom Status");
 
     // 3. Setup manual override (non-reusable)
@@ -58,7 +58,7 @@ test.describe("MSW DevTools - Reset All", () => {
     await expect(productsRowReset.locator(".override-indicator")).toBeHidden();
 
     // Native handler should be back to 'original'
-    const statusRow = await devToolsPage.getHandlerRow("/api/status");
+    const statusRow = await devToolsPage.getHandlerRow("[GET] /api/status");
     await expect(statusRow.getByRole("combobox")).toHaveValue("original");
     // Custom scenario should be gone from the list
     await expect(

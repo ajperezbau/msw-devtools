@@ -59,13 +59,20 @@ test.describe("MSW DevTools Plugin", () => {
     await devToolsPage.toggle();
 
     // Handler registered via setupWorker in src/main.ts
-    const row = await devToolsPage.getHandlerRow("/api/status");
-    await devToolsPage.expectHandler("/api/status", "GET", "/api/status");
-    await devToolsPage.expectScenario("/api/status", "original");
+    // We now have both GET and POST for /api/status.
+    // The keys are [GET] /api/status and [POST] /api/status.
 
-    // Check for native indicator (the "N" badge in the first column)
-    await expect(row.locator(".native-indicator")).toBeVisible();
-    await expect(row.locator(".native-indicator")).toHaveText("N");
+    const getRow = await devToolsPage.getHandlerRow("[GET] /api/status");
+    await devToolsPage.expectHandler("[GET] /api/status", "GET", "/api/status");
+    await expect(getRow.locator(".native-indicator")).toHaveText("N");
+
+    const postRow = await devToolsPage.getHandlerRow("[POST] /api/status");
+    await devToolsPage.expectHandler(
+      "[POST] /api/status",
+      "POST",
+      "/api/status",
+    );
+    await expect(postRow.locator(".native-indicator")).toHaveText("N");
   });
 
   test("should filter handlers by name, url, and method", async ({ page }) => {

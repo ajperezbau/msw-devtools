@@ -56,7 +56,7 @@ test.describe("MSW DevTools - Presets (Recipes)", () => {
     // 1. Change two handlers
     await devToolsPage.selectScenario("users", "empty");
     // status only has "default" but let's assume it's there
-    const statusRow = await devToolsPage.getHandlerRow("/api/status");
+    const statusRow = await devToolsPage.getHandlerRow("[GET] /api/status");
 
     // 2. Open selection mode
     await devToolsPage.switchTab("Registry");

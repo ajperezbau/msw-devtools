@@ -23,6 +23,7 @@
         <button id="fetch-users">Fetch Users (GET)</button>
         <button id="fetch-products">Fetch Products (POST)</button>
         <button id="fetch-status">Fetch Status (GET)</button>
+        <button id="post-status">Update Status (POST)</button>
       </div>
       <div style="background: #f5f5f5; padding: 1rem; border-radius: 4px">
         <strong>Last Response:</strong>
@@ -86,6 +87,23 @@ No requests yet</pre
           if (output) output.innerText = "Fetch status...";
           try {
             const response = await fetch("/api/status");
+            const result = await handleResponse(response);
+            if (output) output.innerText = result;
+          } catch (err) {
+            if (output) output.innerText = `Error: ${err.message}`;
+          }
+        });
+
+      document
+        .getElementById("post-status")
+        ?.addEventListener("click", async () => {
+          if (output) output.innerText = "Updating status...";
+          try {
+            const response = await fetch("/api/status", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ active: true, updatedBy: "Demo Page" }),
+            });
             const result = await handleResponse(response);
             if (output) output.innerText = result;
           } catch (err) {
