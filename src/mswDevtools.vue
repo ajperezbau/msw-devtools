@@ -437,7 +437,7 @@
                 </td>
                 <td class="col-info">
                   <div class="handler-info" v-if="scenarioRegistry[key]">
-                    <span class="key-text">{{ key }}</span>
+                    <span class="key-text">{{ displayKey(key) }}</span>
                     <div
                       v-if="scenarioRegistry[key].url !== key"
                       class="url-wrapper"
@@ -765,7 +765,7 @@
                     :key="hKey"
                     class="preview-tag"
                   >
-                    <span class="preview-key">{{ hKey }}:</span>
+                    <span class="preview-key">{{ displayKey(hKey) }}:</span>
                     {{ scenario }}
                   </span>
                 </div>
@@ -857,7 +857,7 @@
                 </div>
                 <div class="log-scenario-info">
                   <div class="log-key-wrapper">
-                    <span class="log-key">{{ entry.key }}</span>
+                    <span class="log-key">{{ displayKey(entry.key) }}</span>
                     <span
                       v-if="scenarioRegistry[entry.key]?.isNative"
                       class="native-badge mini"
@@ -1770,6 +1770,10 @@ const isModified = (key: string) => {
 
 const isCustomScenario = (key: string, scenario: string) => {
   return !!customScenarios[key]?.[scenario];
+};
+
+const displayKey = (key: string) => {
+  return key.replace(/^\[[A-Z]+\]\s+/, "");
 };
 
 watch(isOpen, (newValue) => {

@@ -155,13 +155,21 @@ export const setupMswRegistry = (
       if (!handler.info || !handler.info.path) return;
 
       const { path, method } = handler.info;
-      const key = path;
+      const methodUpper = method.toUpperCase();
 
-      // If it's not already registered by us, register it as a "Static" scenario
-      if (!registeredHandlers.some((h) => h.key === key)) {
+      // Check if already managed (by exact key or by url+method combination)
+      const isAlreadyManaged =
+        registeredHandlers.some((h) => h.key === path) ||
+        Object.values(scenarioRegistry).some(
+          (m) => m.url === path && m.method === methodUpper,
+        );
+
+      if (!isAlreadyManaged) {
+        // Use a composite key [METHOD] path for native handlers to avoid collisions
+        const key = `[${methodUpper}] ${path}`;
         register(key)
           .url(path)
-          .method(method.toLowerCase())
+          .method(method.toLowerCase() as any)
           .native(true)
           .scenario("original", handler.resolver || handler.run)
           .defaultScenario("original")

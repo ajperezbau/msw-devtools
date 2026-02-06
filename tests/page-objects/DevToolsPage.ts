@@ -160,8 +160,10 @@ export class DevToolsPage {
   async expectHandler(name: string, method: string, url: string) {
     const row = await this.getHandlerRow(name);
     await expect(row).toBeVisible();
-    await expect(row.getByText(method)).toBeVisible();
-    await expect(row.getByText(url)).toBeVisible();
+    await expect(row.getByText(method, { exact: true })).toBeVisible();
+    await expect(
+      row.locator(".url-wrapper").getByText(url, { exact: true }),
+    ).toBeVisible();
   }
 
   async expectScenario(handlerName: string, scenarioName: string) {
