@@ -1,0 +1,11 @@
+src
+tests
+playwright.config.ts
+vite.config.ts
+tsconfig.json
+tsconfig.*.json
+.agent
+.gitignore
+.npmignore
+# dist is included via the "files" field in package.json, 
+# but we can be explicit here about what to ignore if needed.

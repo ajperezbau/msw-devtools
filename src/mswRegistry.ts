@@ -285,17 +285,13 @@ const registerInternal = (config: {
             );
             response = new HttpResponse(null, { status: 404 });
           } else {
-            response = (await resolver(
-              info,
-            )) as HttpResponse<DefaultBodyType>;
+            response = (await resolver(info)) as HttpResponse<DefaultBodyType>;
           }
         }
       }
 
       const activeDelay =
-        (handlerDelays[key] ?? 0) > 0
-          ? handlerDelays[key]
-          : globalDelay.value;
+        (handlerDelays[key] ?? 0) > 0 ? handlerDelays[key] : globalDelay.value;
       if (activeDelay && activeDelay > 0) {
         await new Promise((resolve) => setTimeout(resolve, activeDelay));
       }
@@ -370,7 +366,13 @@ export const setupMswRegistry = (
 
     existingHandlers.forEach((handler: any) => {
       // Small check to avoid internal or already managed handlers
-      if (!handler.info || !handler.info.path) return;
+      if (
+        !handler.info ||
+        typeof handler.info.path !== "string" ||
+        typeof handler.info.method !== "string"
+      ) {
+        return;
+      }
 
       const { path, method } = handler.info;
       const methodUpper = method.toUpperCase();
