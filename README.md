@@ -78,11 +78,7 @@ No changes are needed to your existing MSW code beyond the initial setup!
 
 ## Defining Handlers
 
-You have two ways to define your mock handlers:
-
-### 1. Declarative (Recommended)
-
-Use `defineHandlers` to register multiple endpoints at once.
+Use `defineHandlers` to register your mock handlers.
 
 ```typescript
 import { defineHandlers } from "msw-devtools-plugin";
@@ -101,35 +97,33 @@ defineHandlers({
 });
 ```
 
-### 2. Fluent API
+#### Why `defineHandlers`?
 
-Use `register` (alias of `MswHandlerBuilder`) for a more programmatic approach.
+While **Zero Config Discovery** is great for getting started, using `defineHandlers` offers several key advantages:
 
-```typescript
-import { register } from "msw-devtools-plugin";
-import { HttpResponse } from "msw";
-
-register("profile")
-  .url("/api/profile")
-  .method("get")
-  .scenario("default", () => {
-    return HttpResponse.json({ id: 1, name: "John Doe" });
-  })
-  .scenario("anonymous", () => {
-    return HttpResponse.json({ id: null, name: "Guest" });
-  })
-  .defaultScenario("default")
-  .build();
-```
+- 🏗 **Multiple Scenarios**: Auto-discovery only captures the "original" behavior. `defineHandlers` allows you to define multiple states (e.g., `success`, `error`, `loading`) for the same endpoint.
+- 🏷 **Custom Labeling**: Instead of seeing `[GET] /api/very/long/path/to/users`, you can identify the handler with a simple, readable key like `users`.
+- 🎯 **Preset Integration**: Readable keys make it much easier to define and manage [Presets](#global-presets-recipes) in your codebase.
+- ⚙️ **Default Scenarios**: Specify which scenario should be active when the application starts.
+- 🔝 **Explicit Priority**: Fine-tune the matching order for overlapping routes.
 
 ### Advanced Usage
 
 #### Priority Handling
 
-Handlers with higher priority will be matched first by MSW.
+Handled with higher priority will be matched first by MSW. Use the `priority` property in the handler configuration.
 
 ```typescript
-register("getUserAdmin").url("/api/user/admin").priority(10).build();
+defineHandlers({
+  getUserAdmin: {
+    url: "/api/user/admin",
+    method: "get",
+    priority: 10,
+    scenarios: {
+      default: () => HttpResponse.json({ role: "admin" }),
+    },
+  },
+});
 ```
 
 ### Global Presets (Recipes)

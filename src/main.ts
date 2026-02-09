@@ -1,29 +1,34 @@
 import { createApp } from "vue";
-import { MswDevtoolsPlugin, MswHandlerBuilder } from "./index";
+import { MswDevtoolsPlugin, defineHandlers } from "./index";
 import { setupWorker } from "msw/browser";
 import { http, HttpResponse } from "msw";
 
 const app = createApp({});
 
 // Define some example handlers to test
-new MswHandlerBuilder("users")
-  .url("/api/users")
-  .method("get")
-  .scenario("default", () => {
-    return HttpResponse.json([{ id: 1, name: "John" }]);
-  })
-  .scenario("empty", () => {
-    return HttpResponse.json([]);
-  })
-  .build();
-
-new MswHandlerBuilder("products")
-  .url("/api/products")
-  .method("post")
-  .scenario("default", () => {
-    return HttpResponse.json({ success: true, id: 123 }, { status: 201 });
-  })
-  .build();
+defineHandlers({
+  users: {
+    url: "/api/users",
+    method: "get",
+    scenarios: {
+      default: () => {
+        return HttpResponse.json([{ id: 1, name: "John" }]);
+      },
+      empty: () => {
+        return HttpResponse.json([]);
+      },
+    },
+  },
+  products: {
+    url: "/api/products",
+    method: "post",
+    scenarios: {
+      default: () => {
+        return HttpResponse.json({ success: true, id: 123 }, { status: 201 });
+      },
+    },
+  },
+});
 
 const worker = setupWorker(
   http.get("/api/status", () => {

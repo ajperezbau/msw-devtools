@@ -129,6 +129,224 @@ const registeredHandlers: RegisteredHandler[] = [];
 let baseHandlers: any[] = [];
 let urlResolver: (url: string) => string = (url) => url;
 
+const BUILT_IN_SCENARIOS: Record<string, HttpResponseResolver> = {
+  ServerError: () => new HttpResponse(null, { status: 500 }),
+};
+
+const refreshHandlers = () => {
+  if (!mswInstance) return;
+
+  // Sort by priority (higher first). MSW matches in order of provided handlers.
+  const sorted = [...registeredHandlers].sort(
+    (a, b) => b.priority - a.priority,
+  );
+  const handlers = sorted.map((h) => h.factory(urlResolver));
+  mswInstance.resetHandlers(...handlers, ...baseHandlers);
+};
+
+const registerInternal = (config: {
+  key: string;
+  url: string;
+  method: "get" | "post" | "put" | "delete" | "patch";
+  scenarios: Record<string, HttpResponseResolver>;
+  defaultScenario?: string;
+  priority?: number;
+  isNative?: boolean;
+}) => {
+  const {
+    key,
+    url,
+    method,
+    scenarios: baseScenarios,
+    defaultScenario = "default",
+    priority = 0,
+    isNative = false,
+  } = config;
+
+  const scenarios: Record<string, HttpResponseResolver> = {
+    ...BUILT_IN_SCENARIOS,
+    ...baseScenarios,
+  };
+
+  // If no "default" was explicitly provided in scenarios, but we have others,
+  // pick the first one as default if defaultScenario is still "default"
+  let effectiveDefault = defaultScenario;
+  if (
+    effectiveDefault === "default" &&
+    !scenarios.default &&
+    Object.keys(baseScenarios).length > 0
+  ) {
+    effectiveDefault = Object.keys(baseScenarios)[0]!;
+  }
+
+  const originalScenarios = Object.keys(scenarios);
+
+  // Registrar metadatos
+  scenarioRegistry[key] = {
+    url,
+    method: method.toUpperCase(),
+    isNative,
+    originalScenarios,
+    scenarios: [
+      ...originalScenarios,
+      ...Object.keys(customScenarios[key] || {}),
+    ].filter((v, i, a) => a.indexOf(v) === i), // Unificar y evitar duplicados
+  };
+
+  // Inicializar estado si no existe (URL tiene prioridad sobre persistencia)
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlValue = urlParams.get(key);
+
+  if (urlValue) {
+    scenarioState[key] = urlValue;
+  } else if (!scenarioState[key]) {
+    scenarioState[key] = effectiveDefault;
+  }
+
+  // Inicializar delay si no existe
+  if (handlerDelays[key] === undefined) {
+    handlerDelays[key] = 0;
+  }
+
+  const factory = (resolver: (url: string) => string) =>
+    http[method](resolver(url), async (info: any) => {
+      const { request } = info;
+
+      // Capture request body (cloning to avoid consuming the stream)
+      let requestBody: unknown;
+      try {
+        const clonedRequest = request.clone();
+        const contentType = clonedRequest.headers.get("content-type");
+        if (contentType?.includes("application/json")) {
+          requestBody = await clonedRequest.json();
+        } else {
+          const text = await clonedRequest.text();
+          requestBody = text || undefined;
+        }
+      } catch {
+        requestBody = undefined;
+      }
+
+      const currentUrlParams = new URLSearchParams(window.location.search);
+      const activeScenarioKey =
+        currentUrlParams.get(key) || scenarioState[key] || effectiveDefault;
+
+      const override = customOverrides[key];
+
+      let response: HttpResponse<DefaultBodyType> | undefined;
+
+      if (override?.enabled) {
+        try {
+          const body = JSON.parse(override.body);
+          response = HttpResponse.json(body, { status: override.status });
+        } catch {
+          response = new HttpResponse(override.body, {
+            status: override.status,
+            headers: { "Content-Type": "text/plain" },
+          });
+        }
+      }
+
+      if (!response) {
+        const customScenario = customScenarios[key]?.[activeScenarioKey];
+
+        if (customScenario) {
+          try {
+            const body = JSON.parse(customScenario.body);
+            response = HttpResponse.json(body, {
+              status: customScenario.status,
+            });
+          } catch {
+            response = new HttpResponse(customScenario.body, {
+              status: customScenario.status,
+              headers: { "Content-Type": "text/plain" },
+            });
+          }
+        } else {
+          let resolver = scenarios[activeScenarioKey];
+
+          // Fallback to default scenario if active one doesn't exist
+          if (!resolver && activeScenarioKey !== effectiveDefault) {
+            resolver = scenarios[effectiveDefault];
+          }
+
+          // Final fallback to any available scenario if default one also doesn't exist
+          if (!resolver) {
+            const firstAvailableKey = Object.keys(scenarios)[0];
+            if (firstAvailableKey) {
+              resolver = scenarios[firstAvailableKey];
+            }
+          }
+
+          if (!resolver) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              `[MswRegistry] Escenario '${activeScenarioKey}' no encontrado para '${key}'`,
+            );
+            response = new HttpResponse(null, { status: 404 });
+          } else {
+            response = (await resolver(
+              info,
+            )) as HttpResponse<DefaultBodyType>;
+          }
+        }
+      }
+
+      const activeDelay =
+        (handlerDelays[key] ?? 0) > 0
+          ? handlerDelays[key]
+          : globalDelay.value;
+      if (activeDelay && activeDelay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, activeDelay));
+      }
+
+      if (response instanceof HttpResponse) {
+        // Capture response body (cloning to avoid consuming the stream)
+        let responseBody: unknown;
+        try {
+          const clonedResponse = response.clone();
+          const contentType = clonedResponse.headers.get("content-type");
+          if (contentType?.includes("application/json")) {
+            responseBody = await clonedResponse.json();
+          } else {
+            const text = await clonedResponse.text();
+            responseBody = text || undefined;
+          }
+        } catch {
+          responseBody = undefined;
+        }
+
+        activityLog.unshift({
+          id: Math.random().toString(36).substring(2),
+          timestamp: Date.now(),
+          key,
+          scenario: override?.enabled ? "Manual Override" : activeScenarioKey,
+          method: method.toUpperCase(),
+          url: request.url,
+          status: response.status,
+          requestBody,
+          responseBody,
+        });
+
+        if (activityLog.length > 100) {
+          activityLog.pop();
+        }
+      }
+
+      return response;
+    });
+
+  // Registrar en el listado global
+  registeredHandlers.push({ key, factory, priority });
+
+  // Si ya tenemos instancia de MSW, refrescar
+  if (mswInstance) {
+    refreshHandlers();
+  }
+
+  return factory(urlResolver);
+};
+
 export const setupMswRegistry = (
   instance: any,
   initialHandlers: any[] = [],
@@ -170,29 +388,21 @@ export const setupMswRegistry = (
       if (!isAlreadyManaged) {
         // Use a composite key [METHOD] path for native handlers to avoid collisions
         const key = `[${methodUpper}] ${path}`;
-        register(key)
-          .url(path)
-          .method(methodLower as any)
-          .native(true)
-          .scenario("original", handler.resolver || handler.run)
-          .defaultScenario("original")
-          .build();
+        registerInternal({
+          key,
+          url: path,
+          method: methodLower as any,
+          isNative: true,
+          scenarios: {
+            original: handler.resolver || handler.run,
+          },
+          defaultScenario: "original",
+        });
       }
     });
   }
 
   refreshHandlers();
-};
-
-const refreshHandlers = () => {
-  if (!mswInstance) return;
-
-  // Sort by priority (higher first). MSW matches in order of provided handlers.
-  const sorted = [...registeredHandlers].sort(
-    (a, b) => b.priority - a.priority,
-  );
-  const handlers = sorted.map((h) => h.factory(urlResolver));
-  mswInstance.resetHandlers(...handlers, ...baseHandlers);
 };
 
 export const clearActivityLog = () => {
@@ -224,12 +434,6 @@ export const applyPreset = (presetName: string) => {
     });
   }
 };
-
-const BUILT_IN_SCENARIOS: Record<string, HttpResponseResolver> = {
-  ServerError: () => new HttpResponse(null, { status: 500 }),
-};
-
-type BuiltInScenario = keyof typeof BUILT_IN_SCENARIOS;
 
 // Persistir cambios en localStorage
 watch(
@@ -276,285 +480,6 @@ watch(globalDelay, (newDelay) => {
   localStorage.setItem(DELAY_KEY, String(newDelay));
 });
 
-/**
- * Fluent builder for MSW handlers
- */
-export class MswHandlerBuilder<T extends string = "default"> {
-  private _key: string;
-  private _url: string = "";
-  private _method: "get" | "post" | "put" | "delete" | "patch" = "get";
-  private _scenarios: Record<string, HttpResponseResolver> = {
-    ...BUILT_IN_SCENARIOS,
-  };
-  private _defaultScenario: string = "default";
-  private _priority: number = 0;
-  private _isNative: boolean = false;
-
-  constructor(key: string) {
-    this._key = key;
-  }
-
-  url(value: string) {
-    this._url = value;
-    return this;
-  }
-
-  native(value: boolean = true) {
-    this._isNative = value;
-    return this;
-  }
-
-  priority(value: number) {
-    this._priority = value;
-    return this;
-  }
-
-  method(value: "get" | "post" | "put" | "delete" | "patch") {
-    this._method = value;
-    return this;
-  }
-
-  defaultScenario(value: T | BuiltInScenario) {
-    this._defaultScenario = value;
-    return this;
-  }
-
-  scenario<S extends string>(
-    name: S,
-    resolver: HttpResponseResolver,
-  ): MswHandlerBuilder<T | S> {
-    const hadDefaultScenario = Boolean(this._scenarios.default);
-    this._scenarios[name] = resolver;
-
-    // If no default scenario was set and this isn't "default", make it the default
-    if (
-      this._defaultScenario === "default" &&
-      name !== "default" &&
-      !hadDefaultScenario
-    ) {
-      this._defaultScenario = name;
-    }
-
-    return this as unknown as MswHandlerBuilder<T | S>;
-  }
-
-  build() {
-    const key = this._key;
-    const url = this._url;
-    const method = this._method;
-    const scenarios = this._scenarios;
-    const defaultScenario = this._defaultScenario;
-    const priority = this._priority;
-    const isNative = this._isNative;
-
-    const originalScenarios = Object.keys(scenarios);
-
-    // Registrar metadatos
-    scenarioRegistry[key] = {
-      url,
-      method: method.toUpperCase(),
-      isNative,
-      originalScenarios,
-      scenarios: [
-        ...originalScenarios,
-        ...Object.keys(customScenarios[key] || {}),
-      ].filter((v, i, a) => a.indexOf(v) === i), // Unificar y evitar duplicados
-    };
-
-    // Inicializar estado si no existe (URL tiene prioridad sobre persistencia)
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlValue = urlParams.get(key);
-
-    if (urlValue) {
-      scenarioState[key] = urlValue;
-    } else if (!scenarioState[key]) {
-      scenarioState[key] = defaultScenario;
-    }
-
-    // Inicializar delay si no existe
-    if (handlerDelays[key] === undefined) {
-      handlerDelays[key] = 0;
-    }
-
-    const factory = (resolver: (url: string) => string) =>
-      http[method](resolver(url), async (info: any) => {
-        const { request } = info;
-
-        // Capture request body (cloning to avoid consuming the stream)
-        let requestBody: unknown;
-        try {
-          const clonedRequest = request.clone();
-          const contentType = clonedRequest.headers.get("content-type");
-          if (contentType?.includes("application/json")) {
-            requestBody = await clonedRequest.json();
-          } else {
-            const text = await clonedRequest.text();
-            requestBody = text || undefined;
-          }
-        } catch {
-          requestBody = undefined;
-        }
-
-        const currentUrlParams = new URLSearchParams(window.location.search);
-        const activeScenarioKey =
-          currentUrlParams.get(key) || scenarioState[key] || defaultScenario;
-
-        const override = customOverrides[key];
-
-        let response: HttpResponse<DefaultBodyType> | undefined;
-
-        if (override?.enabled) {
-          try {
-            const body = JSON.parse(override.body);
-            response = HttpResponse.json(body, { status: override.status });
-          } catch {
-            response = new HttpResponse(override.body, {
-              status: override.status,
-              headers: { "Content-Type": "text/plain" },
-            });
-          }
-        }
-
-        if (!response) {
-          const customScenario = customScenarios[key]?.[activeScenarioKey];
-
-          if (customScenario) {
-            try {
-              const body = JSON.parse(customScenario.body);
-              response = HttpResponse.json(body, {
-                status: customScenario.status,
-              });
-            } catch {
-              response = new HttpResponse(customScenario.body, {
-                status: customScenario.status,
-                headers: { "Content-Type": "text/plain" },
-              });
-            }
-          } else {
-            let resolver = scenarios[activeScenarioKey];
-
-            // Fallback to default scenario if active one doesn't exist
-            if (!resolver && activeScenarioKey !== defaultScenario) {
-              resolver = scenarios[defaultScenario];
-            }
-
-            // Final fallback to any available scenario if default one also doesn't exist
-            if (!resolver) {
-              const firstAvailableKey = Object.keys(scenarios)[0];
-              if (firstAvailableKey) {
-                resolver = scenarios[firstAvailableKey];
-              }
-            }
-
-            if (!resolver) {
-              // eslint-disable-next-line no-console
-              console.warn(
-                `[MswRegistry] Escenario '${activeScenarioKey}' no encontrado para '${key}'`,
-              );
-              response = new HttpResponse(null, { status: 404 });
-            } else {
-              response = (await resolver(
-                info,
-              )) as HttpResponse<DefaultBodyType>;
-            }
-          }
-        }
-
-        const activeDelay =
-          (handlerDelays[key] ?? 0) > 0
-            ? handlerDelays[key]
-            : globalDelay.value;
-        if (activeDelay && activeDelay > 0) {
-          await new Promise((resolve) => setTimeout(resolve, activeDelay));
-        }
-
-        if (response instanceof HttpResponse) {
-          // Capture response body (cloning to avoid consuming the stream)
-          let responseBody: unknown;
-          try {
-            const clonedResponse = response.clone();
-            const contentType = clonedResponse.headers.get("content-type");
-            if (contentType?.includes("application/json")) {
-              responseBody = await clonedResponse.json();
-            } else {
-              const text = await clonedResponse.text();
-              responseBody = text || undefined;
-            }
-          } catch {
-            responseBody = undefined;
-          }
-
-          activityLog.unshift({
-            id: Math.random().toString(36).substring(2),
-            timestamp: Date.now(),
-            key,
-            scenario: override?.enabled ? "Manual Override" : activeScenarioKey,
-            method: method.toUpperCase(),
-            url: request.url,
-            status: response.status,
-            requestBody,
-            responseBody,
-          });
-
-          if (activityLog.length > 100) {
-            activityLog.pop();
-          }
-        }
-
-        return response;
-      });
-
-    // Registrar en el listado global
-    registeredHandlers.push({ key, factory, priority });
-
-    // Si ya tenemos instancia de MSW, refrescar
-    if (mswInstance) {
-      refreshHandlers();
-    }
-
-    return factory(urlResolver);
-  }
-}
-
-export const register = (key: string) => new MswHandlerBuilder(key);
-
-/**
- * @deprecated Use register(key).url(url).scenario(...).build() instead
- */
-export const createOrchestratedHandler = <
-  T extends string,
-  D extends T | BuiltInScenario,
->(
-  key: string,
-  definition: {
-    url: string;
-    method?: "get" | "post" | "put" | "delete";
-    scenarios: Record<T, HttpResponseResolver>;
-    defaultScenario?: D;
-  },
-) => {
-  const {
-    url,
-    method = "get",
-    scenarios,
-    defaultScenario = "default" as D,
-  } = definition;
-
-  let builder = register(key)
-    .url(url)
-    .method(method)
-    .defaultScenario(defaultScenario);
-
-  Object.entries(scenarios).forEach(([name, resolver]) => {
-    builder = builder.scenario(name, resolver as HttpResponseResolver);
-  });
-
-  return builder.build();
-};
-
-// Backward compatibility alias
-export const createScenarioHandler = createOrchestratedHandler;
-
 export const defineHandlers = (
   configs: Record<
     string,
@@ -568,19 +493,13 @@ export const defineHandlers = (
   >,
 ) => {
   return Object.entries(configs).map(([key, config]) => {
-    let builder = register(key)
-      .url(config.url)
-      .method(config.method || "get")
-      .priority(config.priority || 0);
-
-    if (config.defaultScenario) {
-      builder.defaultScenario(config.defaultScenario);
-    }
-
-    Object.entries(config.scenarios).forEach(([name, resolver]) => {
-      builder.scenario(name, resolver);
+    return registerInternal({
+      key,
+      url: config.url,
+      method: (config.method || "get") as any,
+      scenarios: config.scenarios,
+      defaultScenario: config.defaultScenario,
+      priority: config.priority,
     });
-
-    return builder.build();
   });
 };
