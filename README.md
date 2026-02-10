@@ -189,3 +189,27 @@ Once installed, a floating gear icon will appear in your application.
 
 - `Ctrl + Shift + M`: Toggle Devtools panel.
 - `Ctrl + Enter`: Apply changes and reload page (when panel is open).
+
+## FAQ
+
+### Does this work with GitHub's free tier?
+
+**Yes, absolutely!** This project is fully compatible with GitHub's free tier:
+
+- **The MSW Devtools Plugin itself** is a client-side browser tool that runs in your Vue 3 application. It has no dependency on GitHub or any cloud services - it works entirely in your browser using `localStorage` for persistence.
+
+- **The GitHub repository and CI/CD** use only standard GitHub Actions features available in the free tier (ubuntu runners, standard actions, basic workflows). Anyone can fork, clone, and contribute to this project using a free GitHub account.
+
+- **No paid features required** - You don't need GitHub Pro, Teams, or Enterprise to use, develop, or contribute to this project.
+
+---
+
+**¿Funciona con GitHub gratuito?**
+
+**¡Sí, absolutamente!** Este proyecto es totalmente compatible con el nivel gratuito de GitHub:
+
+- **El plugin MSW Devtools** es una herramienta de navegador del lado del cliente que se ejecuta en tu aplicación Vue 3. No tiene dependencia de GitHub ni de ningún servicio en la nube - funciona completamente en tu navegador usando `localStorage` para persistencia.
+
+- **El repositorio de GitHub y CI/CD** usan solo características estándar de GitHub Actions disponibles en el nivel gratuito (runners de ubuntu, acciones estándar, flujos de trabajo básicos). Cualquiera puede hacer fork, clonar y contribuir a este proyecto usando una cuenta gratuita de GitHub.
+
+- **No se requieren características de pago** - No necesitas GitHub Pro, Teams o Enterprise para usar, desarrollar o contribuir a este proyecto.
