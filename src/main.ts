@@ -38,6 +38,14 @@ const worker = setupWorker(
   http.post("/api/status", () => {
     return HttpResponse.json({ success: true });
   }),
+  // Handler with RegExp path to test auto-discovery robustness
+  http.get(/\/api\/regex-test/, () => {
+    return HttpResponse.json({ regex: true });
+  }),
+  // Handler with "all" method (might have different info)
+  http.all("/api/all-test", () => {
+    return HttpResponse.json({ all: true });
+  }),
 );
 await worker.start();
 

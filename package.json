@@ -1,14 +1,30 @@
 {
   "name": "msw-devtools-plugin",
   "version": "0.1.0",
+  "description": "A powerful browser-based UI for managing Mock Service Worker (MSW) handlers in Vue 3 applications.",
   "type": "module",
+  "author": "ajperezbau",
+  "license": "MIT",
+  "keywords": [
+    "msw",
+    "devtools",
+    "mock",
+    "vue",
+    "testing"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ajperezbau/msw-devtools"
+  },
   "files": [
     "dist"
   ],
   "main": "./dist/msw-devtools.umd.cjs",
   "module": "./dist/msw-devtools.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/msw-devtools.js",
       "require": "./dist/msw-devtools.umd.cjs"
     }
@@ -33,6 +49,7 @@
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
     "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vite-plugin-dts": "^4.5.4",
     "vue": "^3.5.24",
     "vue-tsc": "^3.1.4"
   },
