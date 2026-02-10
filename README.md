@@ -78,13 +78,15 @@ No changes are needed to your existing MSW code beyond the initial setup!
 
 ## Defining Handlers
 
-Use `defineHandlers` to register your mock handlers.
+Use `defineHandlers` to create handlers with multiple scenarios, then pass them to your MSW worker.
 
 ```typescript
 import { defineHandlers } from "msw-devtools-plugin";
+import { setupWorker } from "msw/browser";
 import { HttpResponse } from "msw";
 
-defineHandlers({
+// Define handlers with multiple scenarios
+const devtoolsHandlers = defineHandlers({
   users: {
     url: "/api/users",
     method: "get",
@@ -95,6 +97,10 @@ defineHandlers({
     },
   },
 });
+
+// Pass the handlers to MSW worker
+const worker = setupWorker(...devtoolsHandlers);
+await worker.start();
 ```
 
 #### Why `defineHandlers`?
@@ -114,7 +120,7 @@ While **Zero Config Discovery** is great for getting started, using `defineHandl
 Handlers with higher priority will be matched first by MSW. Use the `priority` property in the handler configuration.
 
 ```typescript
-defineHandlers({
+const handlers = defineHandlers({
   getUserAdmin: {
     url: "/api/user/admin",
     method: "get",
@@ -124,6 +130,9 @@ defineHandlers({
     },
   },
 });
+
+// Pass to MSW
+const worker = setupWorker(...handlers);
 ```
 
 ### Global Presets (Recipes)

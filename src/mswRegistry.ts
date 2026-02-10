@@ -3,8 +3,26 @@ import {
   HttpResponse,
   type DefaultBodyType,
   type HttpResponseResolver,
+  type HttpHandler,
 } from "msw";
 import { reactive, ref, watch } from "vue";
+
+// Type augmentation to add devtools metadata to MSW handlers
+export interface VueDevtoolsConfig {
+  key: string;
+  url: string;
+  method: "get" | "post" | "put" | "delete" | "patch";
+  scenarios: Record<string, HttpResponseResolver>;
+  defaultScenario: string;
+  priority: number;
+  isNative?: boolean;
+}
+
+declare module "msw" {
+  interface HttpHandler {
+    __vueDevtoolsConfig?: VueDevtoolsConfig;
+  }
+}
 
 const STORAGE_KEY = "msw-scenarios";
 const DELAY_KEY = "msw-delay";
@@ -365,6 +383,21 @@ export const setupMswRegistry = (
     }
 
     existingHandlers.forEach((handler: any) => {
+      // Check if this handler has devtools configuration
+      if (handler.__vueDevtoolsConfig) {
+        const config = handler.__vueDevtoolsConfig;
+        registerInternal({
+          key: config.key,
+          url: config.url,
+          method: config.method,
+          scenarios: config.scenarios,
+          defaultScenario: config.defaultScenario,
+          priority: config.priority,
+          isNative: config.isNative,
+        });
+        return;
+      }
+
       // Small check to avoid internal or already managed handlers
       if (
         !handler.info ||
@@ -482,6 +515,39 @@ watch(globalDelay, (newDelay) => {
   localStorage.setItem(DELAY_KEY, String(newDelay));
 });
 
+/**
+ * Define MSW handlers with multiple scenarios for the devtools.
+ * 
+ * @param configs - Object mapping handler keys to their configuration
+ * @returns Array of MSW HttpHandler instances with attached devtools metadata
+ * 
+ * @example
+ * ```typescript
+ * const handlers = defineHandlers({
+ *   users: {
+ *     url: "/api/users",
+ *     method: "get",
+ *     scenarios: {
+ *       success: () => HttpResponse.json([{ id: 1, name: "John" }]),
+ *       empty: () => HttpResponse.json([]),
+ *     },
+ *   },
+ * });
+ * 
+ * // Pass handlers to MSW worker
+ * const worker = setupWorker(...handlers);
+ * await worker.start();
+ * 
+ * // Then initialize the devtools plugin
+ * app.use(MswDevtoolsPlugin, { worker });
+ * ```
+ * 
+ * @remarks
+ * The returned handlers must be passed to setupWorker() and the worker must be
+ * provided to MswDevtoolsPlugin for the devtools functionality to work.
+ * Until setupMswRegistry() is called (which happens automatically when the plugin
+ * is installed), handlers will return a simple 200 OK response.
+ */
 export const defineHandlers = (
   configs: Record<
     string,
@@ -493,15 +559,32 @@ export const defineHandlers = (
       priority?: number;
     }
   >,
-) => {
+): HttpHandler[] => {
   return Object.entries(configs).map(([key, config]) => {
-    return registerInternal({
+    const method = (config.method || "get") as "get" | "post" | "put" | "patch" | "delete";
+    const defaultScenario = config.defaultScenario || "default";
+    const priority = config.priority || 0;
+    
+    // Create a basic MSW handler with a placeholder resolver.
+    // IMPORTANT: These handlers must be passed to setupWorker() and then
+    // setupMswRegistry() must be called to activate the devtools functionality.
+    // Until setupMswRegistry() is called, handlers will return a simple 200 response.
+    // After setupMswRegistry() processes them, they will use the actual scenario resolvers.
+    const handler = http[method](config.url, () => {
+      return new HttpResponse(null, { status: 200 });
+    }) as HttpHandler;
+    
+    // Attach devtools metadata to the handler for later processing by setupMswRegistry
+    handler.__vueDevtoolsConfig = {
       key,
       url: config.url,
-      method: (config.method || "get") as any,
+      method,
       scenarios: config.scenarios,
-      defaultScenario: config.defaultScenario,
-      priority: config.priority,
-    });
+      defaultScenario,
+      priority,
+      isNative: false,
+    };
+    
+    return handler;
   });
 };

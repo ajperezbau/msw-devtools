@@ -6,7 +6,7 @@ import { http, HttpResponse } from "msw";
 const app = createApp({});
 
 // Define some example handlers to test
-defineHandlers({
+const devtoolsHandlers = defineHandlers({
   users: {
     url: "/api/users",
     method: "get",
@@ -31,6 +31,7 @@ defineHandlers({
 });
 
 const worker = setupWorker(
+  ...devtoolsHandlers,
   http.get("/api/status", () => {
     return HttpResponse.json({ status: "ok", timestamp: Date.now() });
   }),
