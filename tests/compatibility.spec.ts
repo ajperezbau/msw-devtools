@@ -22,7 +22,7 @@ test.describe("MSW DevTools - Handler Compatibility", () => {
     ).not.toBeVisible();
   });
 
-  test("should ignore handlers with 'all' method if they don't have a string method and not crash", async ({
+  test("should ignore handlers with unsupported 'all' method and not crash", async ({
     page,
   }) => {
     await devToolsPage.expectModalVisible();
