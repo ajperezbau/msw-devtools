@@ -127,7 +127,7 @@ test.describe("MSW DevTools - Export and Import", () => {
     // Check preset
     await devToolsPage.switchTab("Presets");
     await expect(
-      page.locator(".preset-card", { hasText: "Imported Preset" }),
+      page.locator(".presets-list-item", { hasText: "Imported Preset" }),
     ).toBeVisible();
 
     // Cleanup

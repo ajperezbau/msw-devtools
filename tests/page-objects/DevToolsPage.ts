@@ -30,10 +30,10 @@ export class DevToolsPage {
       "Global delay in milliseconds",
     );
     this.exportButton = this.dialog.getByRole("button", {
-      name: /Export/i,
+      name: "Export Scenarios",
     });
     this.importButton = this.dialog.getByRole("button", {
-      name: /Import/i,
+      name: "Import Scenarios",
     });
     this.fetchUsersButton = page.getByRole("button", { name: /Fetch Users/ });
     this.fetchProductsButton = page.getByRole("button", {

@@ -755,7 +755,7 @@
             </div>
             <div v-if="selectedPreset" class="presets-detail">
               <div
-                class="preset-card preset-detail-card"
+                class="preset-detail-card"
                 :class="{ 'is-custom': selectedPreset.isCustom }"
               >
                 <div class="preset-info">

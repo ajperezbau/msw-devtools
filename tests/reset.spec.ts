@@ -40,7 +40,7 @@ test.describe("MSW DevTools - Reset All", () => {
     // 5. Create a preset
     await devToolsPage.saveCurrentAsPreset("Test Preset");
     await devToolsPage.switchTab("Presets");
-    await expect(page.locator(".preset-card")).toHaveCount(1);
+    await expect(page.locator(".presets-list-item")).toHaveCount(1);
     await devToolsPage.switchTab("Registry");
 
     // 6. Perform Reset All
@@ -70,7 +70,7 @@ test.describe("MSW DevTools - Reset All", () => {
 
     // Presets should be empty
     await devToolsPage.switchTab("Presets");
-    await expect(page.locator(".preset-card")).toHaveCount(0);
+    await expect(page.locator(".presets-list-item")).toHaveCount(0);
   });
 
   test("should reset only scenarios when using 'Reset Scenarios Only'", async ({
@@ -113,7 +113,7 @@ test.describe("MSW DevTools - Reset All", () => {
 
     // Presets should still exist
     await devToolsPage.switchTab("Presets");
-    await expect(page.locator(".preset-card")).toHaveCount(1);
+    await expect(page.locator(".presets-list-item")).toHaveCount(1);
   });
 
   test("should NOT reset when confirmation is cancelled", async ({ page }) => {
