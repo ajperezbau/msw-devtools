@@ -21,9 +21,16 @@ test.describe("MSW DevTools - Presets (Recipes)", () => {
     const presetName = "Empty Users Flow";
     await devToolsPage.saveCurrentAsPreset(presetName);
 
-    // Verify it appeared
+    // Verify it appeared in the list
+    await devToolsPage.switchTab("Presets");
+    const listItem = page.locator(".presets-list-item", { hasText: presetName });
+    await expect(listItem).toBeVisible();
+    await listItem.click();
+
+    // Verify detail panel shows the correct info
+    const detailPanel = page.locator(".presets-detail");
     await expect(
-      page.locator(".preset-card", { hasText: presetName }),
+      detailPanel.locator(".preset-name", { hasText: presetName }),
     ).toBeVisible();
 
     // 3. Change scenarios back to something else
@@ -44,18 +51,55 @@ test.describe("MSW DevTools - Presets (Recipes)", () => {
     const presetName = "To Be Deleted";
     await devToolsPage.saveCurrentAsPreset(presetName);
 
-    const card = page.locator(".preset-card", { hasText: presetName });
-    await expect(card).toBeVisible();
+    await devToolsPage.switchTab("Presets");
+    const listItem = page.locator(".presets-list-item", { hasText: presetName });
+    await expect(listItem).toBeVisible();
+    await listItem.click();
 
-    // Delete it
-    await card.getByRole("button", { name: "Delete Preset" }).click();
-    await expect(card).not.toBeVisible();
+    // Delete it from the detail panel
+    const detailPanel = page.locator(".presets-detail");
+    await detailPanel.getByRole("button", { name: "Delete preset" }).click();
+    await expect(listItem).not.toBeVisible();
+  });
+
+  test("should switch between presets and update the detail panel", async ({
+    page,
+  }) => {
+    // 1. Create two presets
+    const presetA = "Preset Alpha";
+    const presetB = "Preset Beta";
+
+    await devToolsPage.selectScenario("users", "empty");
+    await devToolsPage.saveCurrentAsPreset(presetA);
+
+    await devToolsPage.switchTab("Registry");
+    await devToolsPage.selectScenario("users", "default");
+    await devToolsPage.saveCurrentAsPreset(presetB);
+
+    // 2. Go to presets tab
+    await devToolsPage.switchTab("Presets");
+
+    // 3. Click on Preset Alpha and verify detail
+    await page.locator(".presets-list-item", { hasText: presetA }).click();
+    const detailPanel = page.locator(".presets-detail");
+    await expect(
+      detailPanel.locator(".preset-name", { hasText: presetA }),
+    ).toBeVisible();
+    await expect(detailPanel).toContainText("empty");
+    await expect(detailPanel).toContainText("users");
+
+    // 4. Click on Preset Beta and verify detail updates
+    await page.locator(".presets-list-item", { hasText: presetB }).click();
+    await expect(
+      detailPanel.locator(".preset-name", { hasText: presetB }),
+    ).toBeVisible();
+    await expect(detailPanel).toContainText("default");
+    await expect(detailPanel).toContainText("users");
   });
 
   test("should save a preset with only selected handlers", async ({ page }) => {
     // 1. Change two handlers
     await devToolsPage.selectScenario("users", "empty");
-    // status only has "default" but let's assume it's there
     const statusRow = await devToolsPage.getHandlerRow("[GET] /api/status");
 
     // 2. Open selection mode
@@ -75,9 +119,6 @@ test.describe("MSW DevTools - Presets (Recipes)", () => {
     await devToolsPage.switchTab("Registry");
     await devToolsPage.selectScenario("users", "default");
 
-    // 6. Change /api/status to something else if we could,
-    // but the point is we want to see it NOT change
-
     // 7. Apply the preset
     await devToolsPage.applyPreset(presetName);
 
@@ -89,16 +130,16 @@ test.describe("MSW DevTools - Presets (Recipes)", () => {
     );
     await expect(usersSelect).toHaveValue("empty");
 
-    // Verify preset card preview only shows one tag
+    // Verify preset detail only shows one tag
     await devToolsPage.switchTab("Presets");
-    const preview = page
-      .locator(".preset-card", { hasText: presetName })
-      .locator(".preset-scenarios-preview");
-    await expect(preview).toContainText("users: empty");
-    await expect(preview).not.toContainText("/api/status");
+    await page.locator(".presets-list-item", { hasText: presetName }).click();
+    const detail = page.locator(".presets-detail");
+    await expect(detail).toContainText("empty");
+    await expect(detail).toContainText("users");
+    await expect(detail).not.toContainText("/api/status");
   });
 
-  test("should render the method badge in the preset preview", async ({
+  test("should render the method badge in the preset detail", async ({
     page,
   }) => {
     // 1. Create a preset
@@ -107,12 +148,13 @@ test.describe("MSW DevTools - Presets (Recipes)", () => {
 
     // 2. Go to Presets tab
     await devToolsPage.switchTab("Presets");
+    await page.locator(".presets-list-item", { hasText: presetName }).click();
 
-    // 3. Verify the method badge is visible in the preview tags
-    const card = page.locator(".preset-card", { hasText: presetName });
-    await expect(card).toBeVisible();
+    // 3. Verify the method badge is visible in the preview tags in the detail panel
+    const detail = page.locator(".presets-detail");
+    await expect(detail).toBeVisible();
 
-    const previewTag = card.locator(".preview-tag").first();
+    const previewTag = detail.locator(".preview-tag").first();
     await expect(previewTag).toBeVisible();
 
     const methodBadge = previewTag.locator(".method-badge");

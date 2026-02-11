@@ -56,9 +56,11 @@ export class DevToolsPage {
 
   async applyPreset(name: string) {
     await this.switchTab("Presets");
+    // Select the preset from the list first
+    await this.dialog.locator(".presets-list-item", { hasText: name }).click();
+    // Then click Apply in the detail panel
     await this.dialog
-      .locator(".preset-card")
-      .filter({ hasText: name })
+      .locator(".presets-detail")
       .getByRole("button", { name: "Apply Preset" })
       .click();
   }

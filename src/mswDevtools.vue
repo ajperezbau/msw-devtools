@@ -720,70 +720,120 @@
             No presets defined. Use <code>definePresets()</code> or the "Create
             Preset" button in the Registry tab to add some.
           </div>
-          <div v-else class="presets-grid">
-            <div
-              v-for="preset in allPresets"
-              :key="preset.name"
-              class="preset-card"
-              :class="{ 'is-custom': preset.isCustom }"
-            >
-              <div class="preset-info">
-                <div class="preset-title-row">
-                  <h3 class="preset-name">{{ preset.name }}</h3>
+          <div v-else class="presets-split">
+            <div class="presets-list" role="list">
+              <button
+                v-for="preset in allPresets"
+                :key="preset.name"
+                type="button"
+                class="presets-list-item"
+                :class="{ active: preset.name === selectedPresetName }"
+                :aria-pressed="preset.name === selectedPresetName"
+                @click="selectedPresetName = preset.name"
+              >
+                <div class="preset-list-title">
+                  <span class="preset-list-name" :title="preset.name">
+                    {{ preset.name }}
+                  </span>
                   <span v-if="preset.isCustom" class="custom-badge"
                     >User Created</span
                   >
-                  <button
-                    v-if="preset.isCustom"
-                    type="button"
-                    @click="deleteCustomPreset(preset.name)"
-                    class="delete-preset-button"
-                    title="Delete Preset"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                  </button>
                 </div>
-                <p v-if="preset.description" class="preset-description">
-                  {{ preset.description }}
-                </p>
-                <div class="preset-scenarios-preview">
+                <div class="preset-list-meta">
+                  <span class="preset-count">
+                    {{ Object.keys(preset.scenarios).length }} handlers
+                  </span>
                   <span
-                    v-for="(scenario, hKey) in preset.scenarios"
-                    :key="hKey"
-                    class="preview-tag"
+                    v-if="preset.description"
+                    class="preset-list-desc"
+                    :title="preset.description"
                   >
-                    <span
-                      v-if="scenarioRegistry && scenarioRegistry[hKey]"
-                      class="method-badge mini"
-                      :class="[scenarioRegistry[hKey].method?.toLowerCase()]"
-                    >
-                      {{ scenarioRegistry[hKey].method }}
-                    </span>
-                    <span class="preview-key">{{ displayKey(hKey) }}:</span>
-                    {{ scenario }}
+                    {{ preset.description }}
                   </span>
                 </div>
-              </div>
-              <button
-                type="button"
-                @click="applyPreset(preset.name)"
-                class="apply-preset-button"
-              >
-                Apply Preset
               </button>
+            </div>
+            <div v-if="selectedPreset" class="presets-detail">
+              <div
+                class="preset-card preset-detail-card"
+                :class="{ 'is-custom': selectedPreset.isCustom }"
+              >
+                <div class="preset-info">
+                  <div class="preset-title-row">
+                    <div class="preset-title-main">
+                      <h3 class="preset-name" :title="selectedPreset.name">
+                        {{ selectedPreset.name }}
+                      </h3>
+                      <span v-if="selectedPreset.isCustom" class="custom-badge"
+                        >User Created</span
+                      >
+                    </div>
+                    <div class="preset-title-actions">
+                      <button
+                        type="button"
+                        @click="applyPreset(selectedPreset.name)"
+                        class="apply-preset-button compact"
+                      >
+                        Apply Preset
+                      </button>
+                      <button
+                        v-if="selectedPreset.isCustom"
+                        type="button"
+                        @click="deleteCustomPreset(selectedPreset.name)"
+                        class="delete-preset-button"
+                        title="Delete preset"
+                        aria-label="Delete preset"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <p
+                    v-if="selectedPreset.description"
+                    class="preset-description"
+                  >
+                    {{ selectedPreset.description }}
+                  </p>
+                  <div class="preset-scenarios-preview">
+                    <span
+                      v-for="(scenario, hKey) in selectedPreset.scenarios"
+                      :key="hKey"
+                      class="preview-tag"
+                      :title="`${hKey}: ${scenario}`"
+                    >
+                      <span class="preview-line">
+                        <span
+                          v-if="scenarioRegistry && scenarioRegistry[hKey]"
+                          class="method-badge mini"
+                          :class="[scenarioRegistry[hKey].method?.toLowerCase()]"
+                        >
+                          {{ scenarioRegistry[hKey].method }}
+                        </span>
+                        <span class="preview-scenario">{{ scenario }}</span>
+                      </span>
+                      <span class="preview-text">
+                        {{ displayKey(hKey) }}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="preset-empty">
+              Select a preset to view its handlers.
             </div>
           </div>
         </div>
@@ -1263,12 +1313,37 @@ const logSearchPath = ref("");
 
 const newPresetName = ref("");
 
+const selectedPresetName = ref<string | null>(null);
+
 const allPresets = computed(() => {
   return [
     ...presets.map((p) => ({ ...p, isCustom: false })),
     ...customPresets.map((p) => ({ ...p, isCustom: true })),
   ];
 });
+
+const selectedPreset = computed(() => {
+  if (!selectedPresetName.value) return null;
+  return allPresets.value.find((p) => p.name === selectedPresetName.value) || null;
+});
+
+watch(
+  allPresets,
+  (nextPresets) => {
+    if (nextPresets.length === 0) {
+      selectedPresetName.value = null;
+      return;
+    }
+
+    if (
+      !selectedPresetName.value ||
+      !nextPresets.some((p) => p.name === selectedPresetName.value)
+    ) {
+      selectedPresetName.value = nextPresets[0]?.name ?? null;
+    }
+  },
+  { immediate: true },
+);
 
 const saveCurrentAsPreset = () => {
   if (!newPresetName.value.trim()) return;
@@ -2941,281 +3016,262 @@ const filteredActivityLog = computed(() => {
 }
 
 .presets-container {
-  padding: 1.5rem;
-  max-height: calc(100vh - 250px);
-  overflow-y: auto;
-}
-
-.presets-header {
-  margin-bottom: 2rem;
-  background: var(--bg-tertiary);
-  padding: 1.25rem;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-}
-
-.create-preset-form {
+  padding: 0;
+  flex: 1;
+  min-height: 0;
   display: flex;
-  gap: 1rem;
-  align-items: center;
+  flex-direction: column;
 }
 
-.advanced-toggle-button {
-  padding: 0.625rem;
-  background: var(--bg-secondary);
+.presets-split {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 0;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.presets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding: 1.5rem;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+}
+
+.presets-list-item {
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-tertiary);
+  border-radius: 10px;
+  background: var(--bg-main);
+  padding: 0.85rem 0.9rem;
+  text-align: left;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-shrink: 0;
 }
 
-.advanced-toggle-button:hover {
+.presets-list-item:hover {
   border-color: var(--accent-color);
-  color: var(--accent-color);
+  color: var(--text-main);
+  background: var(--bg-tertiary);
 }
 
-.advanced-toggle-button.active {
-  background: var(--accent-soft);
+.presets-list-item.active {
   border-color: var(--accent-color);
-  color: var(--accent-color);
+  background: var(--bg-tertiary);
+  box-shadow: inset 0 0 0 1px var(--accent-color);
+  color: var(--text-main);
 }
 
-.preset-advanced-panel {
-  margin-top: 1.25rem;
-  padding-top: 1.25rem;
-  border-top: 1px dashed var(--border-color);
-}
-
-.advanced-header {
+.preset-list-title {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  gap: 0.5rem;
 }
 
-.advanced-title {
-  font-size: 0.875rem;
+.preset-list-name {
+  font-weight: 700;
+  color: var(--text-main);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset-list-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+}
+
+.preset-count {
   font-weight: 600;
   color: var(--text-secondary);
 }
 
-.advanced-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.text-button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--accent-color);
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.text-button:hover {
-  text-decoration: underline;
-}
-
-.preset-handler-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.75rem;
-  max-height: 200px;
-  overflow-y: auto;
-  padding: 0.5rem;
-  background: var(--bg-main);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.preset-handler-item {
-  padding: 0.25rem;
-  cursor: pointer;
-}
-
-.handler-key-label {
-  font-size: 0.8125rem;
-  white-space: nowrap;
+.preset-list-desc {
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 180px;
-  display: inline-block;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.handler-current-scenario {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  margin-left: 0.25rem;
-  font-weight: normal;
-}
-
-.advanced-hint {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  margin-top: 0.75rem;
-  font-style: italic;
-}
-
-.preset-input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  background: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-main);
-  outline: none;
-  font-size: 0.875rem;
-}
-
-.preset-input:focus {
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.save-preset-button {
-  padding: 0.75rem 1.25rem;
-  background: var(--bg-main);
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-}
-
-.save-preset-button:hover:not(:disabled) {
-  border-color: var(--accent-color);
-  color: var(--accent-color);
-}
-
-.save-preset-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.presets-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.preset-card {
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1.25rem;
-  background: var(--bg-secondary);
+.presets-detail {
+  min-width: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  transition: all 0.2s ease;
+  padding: 1.5rem;
+  background-color: var(--bg-main);
+  overflow-y: auto;
 }
 
-.preset-card:hover {
-  border-color: var(--accent-color);
-  transform: translateY(-2px);
-  box-shadow: var(--modal-shadow);
+.preset-detail-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .preset-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.preset-title-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .preset-name {
   margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.custom-badge {
-  font-size: 0.65rem;
-  padding: 0.15rem 0.4rem;
-  background: var(--accent-soft);
-  color: var(--accent-color);
-  border-radius: 4px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-}
-
-.delete-preset-button {
-  padding: 0.25rem;
-  background: transparent;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+.preset-title-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-left: 0.5rem;
-}
-
-.delete-preset-button:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .preset-description {
-  margin: 0 0 1.25rem 0;
-  font-size: 0.875rem;
+  margin: 0 0 1.5rem 0;
+  font-size: 0.9375rem;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .preset-scenarios-preview {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .preview-tag {
   font-size: 0.75rem;
-  padding: 0.25rem 0.625rem;
+  padding: 0.75rem 1rem;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  color: var(--text-secondary);
-}
-
-.preview-key {
-  font-weight: 600;
-  color: var(--text-tertiary);
-  margin-right: 0.25rem;
-}
-
-.apply-preset-button {
-  width: 100%;
-  padding: 0.75rem;
-  background: var(--accent-color);
-  color: white;
-  border: none;
   border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.875rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
   transition: all 0.2s ease;
 }
 
-.apply-preset-button:hover {
-  background: var(--accent-hover);
-  transform: scale(1.02);
+.preview-tag:hover {
+  background: var(--bg-main);
+  border-color: var(--accent-soft);
 }
 
-.apply-preset-button:active {
-  transform: scale(0.98);
+.preview-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.preview-scenario {
+  font-weight: 700;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-text {
+  display: block;
+  width: 100%;
+  color: var(--text-tertiary);
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.apply-preset-button {
+  background-color: var(--accent-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.apply-preset-button:hover {
+  background-color: var(--accent-hover);
+}
+
+.apply-preset-button.compact {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.delete-preset-button {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.delete-preset-button:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.theme-dark .delete-preset-button:hover {
+  background-color: #450a0a;
+}
+
+.preset-empty {
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .registry-table {
@@ -3345,10 +3401,11 @@ const filteredActivityLog = computed(() => {
 }
 
 .method-badge.mini {
-  padding: 0.125rem 0.125rem;
-  font-size: 0.65rem;
-  border-radius: 0.25rem;
-  margin-right: 0.375rem;
+  font-size: 0.6rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  min-width: 32px;
+  flex-shrink: 0;
 }
 
 .theme-light .method-badge.get {
