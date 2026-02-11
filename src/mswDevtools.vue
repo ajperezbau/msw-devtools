@@ -724,12 +724,12 @@
             <div class="presets-list" role="list">
               <button
                 v-for="preset in allPresets"
-                :key="preset.name"
+                :key="preset.key"
                 type="button"
                 class="presets-list-item"
-                :class="{ active: preset.name === selectedPresetName }"
-                :aria-pressed="preset.name === selectedPresetName"
-                @click="selectedPresetName = preset.name"
+                :class="{ active: preset.key === selectedPresetName }"
+                :aria-pressed="preset.key === selectedPresetName"
+                @click="selectedPresetName = preset.key"
               >
                 <div class="preset-list-title">
                   <span class="preset-list-name" :title="preset.name">
@@ -1317,16 +1317,34 @@ const newPresetName = ref("");
 
 const selectedPresetName = ref<string | null>(null);
 
+// Constants for preset key prefixes
+const PRESET_KEY_PREFIX_CUSTOM = 'custom:';
+const PRESET_KEY_PREFIX_GLOBAL = 'global:';
+
+// Helper to create unique preset key
+const getPresetKey = (name: string, isCustom: boolean) => {
+  return isCustom ? `${PRESET_KEY_PREFIX_CUSTOM}${name}` : `${PRESET_KEY_PREFIX_GLOBAL}${name}`;
+};
+
+// Helper to parse preset key back to name and type
+// Currently unused but provided for future extensibility if needed
+const parsePresetKey = (key: string) => {
+  if (key.startsWith(PRESET_KEY_PREFIX_CUSTOM)) {
+    return { name: key.slice(PRESET_KEY_PREFIX_CUSTOM.length), isCustom: true };
+  }
+  return { name: key.startsWith(PRESET_KEY_PREFIX_GLOBAL) ? key.slice(PRESET_KEY_PREFIX_GLOBAL.length) : key, isCustom: false };
+};
+
 const allPresets = computed(() => {
   return [
-    ...presets.map((p) => ({ ...p, isCustom: false })),
-    ...customPresets.map((p) => ({ ...p, isCustom: true })),
+    ...presets.map((p) => ({ ...p, isCustom: false, key: getPresetKey(p.name, false) })),
+    ...customPresets.map((p) => ({ ...p, isCustom: true, key: getPresetKey(p.name, true) })),
   ];
 });
 
 const selectedPreset = computed(() => {
   if (!selectedPresetName.value) return null;
-  return allPresets.value.find((p) => p.name === selectedPresetName.value) || null;
+  return allPresets.value.find((p) => p.key === selectedPresetName.value) || null;
 });
 
 watch(
@@ -1339,9 +1357,9 @@ watch(
 
     if (
       !selectedPresetName.value ||
-      !nextPresets.some((p) => p.name === selectedPresetName.value)
+      !nextPresets.some((p) => p.key === selectedPresetName.value)
     ) {
-      selectedPresetName.value = nextPresets[0]?.name ?? null;
+      selectedPresetName.value = nextPresets[0]?.key ?? null;
     }
   },
   { immediate: true },
