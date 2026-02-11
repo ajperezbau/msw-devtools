@@ -759,54 +759,56 @@
                 :class="{ 'is-custom': selectedPreset.isCustom }"
               >
                 <div class="preset-info">
-                  <div class="preset-title-row">
-                    <div class="preset-title-main">
-                      <h3 class="preset-name" :title="selectedPreset.name">
-                        {{ selectedPreset.name }}
-                      </h3>
-                      <span v-if="selectedPreset.isCustom" class="custom-badge"
-                        >User Created</span
-                      >
-                    </div>
-                    <div class="preset-title-actions">
-                      <button
-                        type="button"
-                        @click="applyPreset(selectedPreset.name)"
-                        class="apply-preset-button compact"
-                      >
-                        Apply Preset
-                      </button>
-                      <button
-                        v-if="selectedPreset.isCustom"
-                        type="button"
-                        @click="deleteCustomPreset(selectedPreset.name)"
-                        class="delete-preset-button"
-                        title="Delete preset"
-                        aria-label="Delete preset"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                  <div class="preset-detail-header">
+                    <div class="preset-title-row">
+                      <div class="preset-title-main">
+                        <h3 class="preset-name" :title="selectedPreset.name">
+                          {{ selectedPreset.name }}
+                        </h3>
+                        <span v-if="selectedPreset.isCustom" class="custom-badge"
+                          >User Created</span
                         >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
+                      </div>
+                      <div class="preset-title-actions">
+                        <button
+                          type="button"
+                          @click="applyPreset(selectedPreset.name)"
+                          class="apply-preset-button compact"
+                        >
+                          Apply Preset
+                        </button>
+                        <button
+                          v-if="selectedPreset.isCustom"
+                          type="button"
+                          @click="deleteCustomPreset(selectedPreset.name)"
+                          class="delete-preset-button"
+                          title="Delete preset"
+                          aria-label="Delete preset"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
+                    <p
+                      v-if="selectedPreset.description"
+                      class="preset-description"
+                    >
+                      {{ selectedPreset.description }}
+                    </p>
                   </div>
-                  <p
-                    v-if="selectedPreset.description"
-                    class="preset-description"
-                  >
-                    {{ selectedPreset.description }}
-                  </p>
                   <div class="preset-scenarios-preview">
                     <span
                       v-for="(scenario, hKey) in selectedPreset.scenarios"
@@ -3111,9 +3113,17 @@ const filteredActivityLog = computed(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
+  padding: 0 1.5rem 1.5rem 1.5rem;
   background-color: var(--bg-main);
   overflow-y: auto;
+}
+
+.preset-detail-header {
+  position: sticky;
+  top: 0;
+  background-color: var(--bg-main);
+  padding-top: 1.5rem;
+  z-index: 10;
 }
 
 .preset-detail-card {
@@ -3171,6 +3181,7 @@ const filteredActivityLog = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  padding-bottom: 2rem;
 }
 
 .preview-tag {
