@@ -1317,17 +1317,22 @@ const newPresetName = ref("");
 
 const selectedPresetName = ref<string | null>(null);
 
+// Constants for preset key prefixes
+const PRESET_KEY_PREFIX_CUSTOM = 'custom:';
+const PRESET_KEY_PREFIX_GLOBAL = 'global:';
+
 // Helper to create unique preset key
 const getPresetKey = (name: string, isCustom: boolean) => {
-  return isCustom ? `custom:${name}` : `global:${name}`;
+  return isCustom ? `${PRESET_KEY_PREFIX_CUSTOM}${name}` : `${PRESET_KEY_PREFIX_GLOBAL}${name}`;
 };
 
 // Helper to parse preset key back to name and type
+// Currently unused but provided for future extensibility if needed
 const parsePresetKey = (key: string) => {
-  if (key.startsWith('custom:')) {
-    return { name: key.slice(7), isCustom: true };
+  if (key.startsWith(PRESET_KEY_PREFIX_CUSTOM)) {
+    return { name: key.slice(PRESET_KEY_PREFIX_CUSTOM.length), isCustom: true };
   }
-  return { name: key.startsWith('global:') ? key.slice(7) : key, isCustom: false };
+  return { name: key.startsWith(PRESET_KEY_PREFIX_GLOBAL) ? key.slice(PRESET_KEY_PREFIX_GLOBAL.length) : key, isCustom: false };
 };
 
 const allPresets = computed(() => {
