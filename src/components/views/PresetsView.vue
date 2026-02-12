@@ -142,8 +142,8 @@ interface Preset {
   key: string;
 }
 
-const PRESET_KEY_PREFIX_GLOBAL = "preset:global:";
-const PRESET_KEY_PREFIX_CUSTOM = "preset:custom:";
+const PRESET_KEY_PREFIX_GLOBAL = "global:";
+const PRESET_KEY_PREFIX_CUSTOM = "custom:";
 
 const getPresetKey = (name: string, isCustom: boolean) => {
   return isCustom
@@ -201,7 +201,7 @@ const handleDeletePreset = (name: string) => {
 
 .presets-split {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 1.5rem;
   flex: 1;
   overflow: hidden;
