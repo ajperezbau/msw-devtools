@@ -1327,14 +1327,6 @@ const getPresetKey = (name: string, isCustom: boolean) => {
 };
 
 // Helper to parse preset key back to name and type
-// Currently unused but provided for future extensibility if needed
-const parsePresetKey = (key: string) => {
-  if (key.startsWith(PRESET_KEY_PREFIX_CUSTOM)) {
-    return { name: key.slice(PRESET_KEY_PREFIX_CUSTOM.length), isCustom: true };
-  }
-  return { name: key.startsWith(PRESET_KEY_PREFIX_GLOBAL) ? key.slice(PRESET_KEY_PREFIX_GLOBAL.length) : key, isCustom: false };
-};
-
 const allPresets = computed(() => {
   return [
     ...presets.map((p) => ({ ...p, isCustom: false, key: getPresetKey(p.name, false) })),
