@@ -1,9 +1,11 @@
-import { createApp } from "vue";
+import { createApp, h } from "vue";
 import { MswDevtoolsPlugin, defineHandlers } from "./index";
 import { setupWorker } from "msw/browser";
 import { http, HttpResponse } from "msw";
 
-const app = createApp({});
+const app = createApp({
+  render: () => h("div", "MSW Devtools Test Environment"),
+});
 
 // Define some example handlers to test
 const devtoolsHandlers = defineHandlers({

@@ -127,10 +127,11 @@
               </svg>
             </button>
             <button
+              v-if="activeTab === 'registry'"
               type="button"
-              @click="toggleSelectionMode"
+              @click="registryViewRef?.toggleSelectionMode()"
               class="import-button"
-              :class="{ active: isSelectionMode }"
+              :class="{ active: registryViewRef?.isSelectionMode }"
               title="Select handlers to create a preset"
               aria-label="Create Preset"
             >
@@ -232,264 +233,13 @@
         </div>
       </div>
 
-      <div class="search-container" v-if="activeTab === 'registry'">
-        <div class="search-wrapper">
-          <input
-            ref="searchInput"
-            v-model="searchQuery"
-            type="text"
-            placeholder="Filter by key, URL or method..."
-            class="search-input"
-          />
-          <button
-            v-if="searchQuery"
-            type="button"
-            @click="searchQuery = ''"
-            class="clear-search-button"
-            title="Clear search"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-        <div class="modified-filter">
-          <MswCheckbox v-model="showOnlyModified"> Modified only </MswCheckbox>
-        </div>
-        <div class="global-delay-control">
-          <label for="global-delay">Global Delay:</label>
-          <div class="global-delay-inputs">
-            <input
-              id="global-delay"
-              type="range"
-              v-model.number="globalDelay"
-              min="0"
-              max="5000"
-              step="100"
-              class="delay-slider"
-            />
-            <div class="global-delay-number-wrapper">
-              <input
-                type="number"
-                v-model.number="globalDelay"
-                min="0"
-                max="10000"
-                step="50"
-                placeholder="0"
-                class="handler-delay-input"
-                aria-label="Global delay in milliseconds"
-              />
-              <span class="ms-label">ms</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        v-if="activeTab === 'registry' && isSelectionMode"
-        class="selection-toolbar"
-      >
-        <div class="selection-info">
-          <span class="selection-count"
-            >{{ selectedKeys.size }} handlers selected</span
-          >
-          <button @click="selectAllVisible" class="text-button">
-            Select Visible
-          </button>
-          <button @click="clearSelection" class="text-button">Clear</button>
-        </div>
-        <div class="selection-actions">
-          <input
-            v-model="newPresetName"
-            placeholder="Preset name..."
-            class="toolbar-input"
-            @keyup.enter="saveCurrentAsPreset"
-          />
-          <button
-            @click="saveCurrentAsPreset"
-            :disabled="!newPresetName || selectedKeys.size === 0"
-            class="toolbar-save-button"
-          >
-            Save Selected
-          </button>
-        </div>
-      </div>
-
-      <div class="registry-container" v-if="activeTab === 'registry'">
-        <table class="registry-table">
-          <thead>
-            <tr>
-              <th v-if="isSelectionMode" class="col-selection">
-                <MswCheckbox v-model="isAllSelected" />
-              </th>
-              <th class="col-status"></th>
-              <th class="col-method">Method</th>
-              <th class="col-info">Handler</th>
-              <th class="col-scenario">Active Scenario</th>
-              <th class="col-delay">Delay (ms)</th>
-              <th class="col-actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="filteredRegistryKeys.length === 0">
-              <td colspan="6" class="empty-state">
-                No handlers found matching your search.
-              </td>
-            </tr>
-            <tr
-              v-for="key in filteredRegistryKeys"
-              :key="key"
-              :class="{
-                'is-modified': isModified(key),
-                'is-selected': isSelectionMode && selectedKeys.has(key),
-              }"
-              @click="isSelectionMode ? toggleKeySelection(key) : null"
-            >
-              <td v-if="isSelectionMode" class="col-selection">
-                <MswCheckbox
-                  :modelValue="selectedKeys.has(key)"
-                  @update:modelValue="toggleKeySelection(key)"
-                  @click.stop
-                />
-              </td>
-              <td class="col-status">
-                <div class="status-indicators">
-                  <span
-                    v-if="scenarioRegistry[key]?.isNative"
-                    class="native-indicator"
-                    title="Native MSW handler (originally in setupWorker)"
-                  >
-                    N
-                  </span>
-                  <span
-                    v-if="customOverrides[key]?.enabled"
-                    class="override-indicator"
-                    title="Manual override active"
-                  >
-                    M
-                  </span>
-                  <span
-                    v-else-if="isModified(key)"
-                    class="modified-indicator"
-                    title="Scenario modified"
-                  ></span>
-                </div>
-              </td>
-              <td class="col-method">
-                <span
-                  v-if="scenarioRegistry[key]"
-                  class="method-badge"
-                  :class="[scenarioRegistry[key].method.toLowerCase()]"
-                >
-                  {{ scenarioRegistry[key].method }}
-                </span>
-              </td>
-              <td class="col-info">
-                <div class="handler-info" v-if="scenarioRegistry[key]">
-                  <span class="key-text">{{ displayKey(key) }}</span>
-                  <div
-                    v-if="scenarioRegistry[key].url !== key"
-                    class="url-wrapper"
-                    :title="scenarioRegistry[key].url"
-                  >
-                    {{ scenarioRegistry[key].url }}
-                  </div>
-                </div>
-              </td>
-              <td class="col-scenario">
-                <select
-                  v-model="scenarioState[key]"
-                  class="scenario-select"
-                  :class="{ 'is-modified': isModified(key) }"
-                  @click.stop
-                >
-                  <option
-                    v-for="scenario in scenarioRegistry[key]?.scenarios"
-                    :key="scenario"
-                    :value="scenario"
-                  >
-                    {{ scenario
-                    }}{{ isCustomScenario(key, scenario) ? " ✨" : "" }}
-                  </option>
-                </select>
-              </td>
-              <td class="col-delay">
-                <div class="handler-delay-wrapper">
-                  <input
-                    type="number"
-                    v-model.number="handlerDelays[key]"
-                    min="0"
-                    max="10000"
-                    step="50"
-                    placeholder="0"
-                    class="handler-delay-input"
-                    @click.stop
-                  />
-                  <span class="ms-label">ms</span>
-                </div>
-              </td>
-              <td class="col-actions">
-                <div class="action-buttons">
-                  <button
-                    type="button"
-                    @click.stop="openOverrideEditor(key)"
-                    class="icon-button"
-                    :class="{ 'has-override': customOverrides[key]?.enabled }"
-                    title="Custom response override"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    @click.stop="viewLogForKey(key)"
-                    class="icon-button"
-                    title="View logs for this handler"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <RegistryView
+        v-if="activeTab === 'registry'"
+        ref="registryViewRef"
+        @open-override="openOverrideEditor"
+        @view-log="viewLogForKey"
+        @preset-created="activeTab = 'presets'"
+      />
 
       <!-- Export Options Dialog -->
       <div v-if="showExportDialog" class="override-editor-overlay">
@@ -1057,9 +807,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import MswCheckbox from "./components/MswCheckbox.vue";
 import MswToggle from "./components/MswToggle.vue";
+import RegistryView from "./components/RegistryView.vue";
 import {
   activityLog,
   applyPreset,
@@ -1077,56 +828,12 @@ import {
 
 const isOpen = ref(false);
 const activeTab = ref<"registry" | "log" | "presets">("registry");
-const searchQuery = ref(localStorage.getItem("msw-scenarios-filter") || "");
+const registryViewRef = ref<any>(null);
 const resetMenuContainer = ref<HTMLElement | null>(null);
 
 const theme = ref<"light" | "dark">(
   (localStorage.getItem("msw-devtools-theme") as "light" | "dark") || "dark",
 );
-
-const isSelectionMode = ref(false);
-const selectedKeys = ref(new Set<string>());
-
-const toggleSelectionMode = () => {
-  isSelectionMode.value = !isSelectionMode.value;
-  if (!isSelectionMode.value) {
-    selectedKeys.value.clear();
-  }
-};
-
-const isAllSelected = computed({
-  get: () => {
-    if (filteredRegistryKeys.value.length === 0) return false;
-    return filteredRegistryKeys.value.every((key) =>
-      selectedKeys.value.has(key),
-    );
-  },
-  set: (val) => {
-    if (val) {
-      filteredRegistryKeys.value.forEach((key) => selectedKeys.value.add(key));
-    } else {
-      filteredRegistryKeys.value.forEach((key) =>
-        selectedKeys.value.delete(key),
-      );
-    }
-  },
-});
-
-const toggleKeySelection = (key: string) => {
-  if (selectedKeys.value.has(key)) {
-    selectedKeys.value.delete(key);
-  } else {
-    selectedKeys.value.add(key);
-  }
-};
-
-const selectAllVisible = () => {
-  filteredRegistryKeys.value.forEach((key) => selectedKeys.value.add(key));
-};
-
-const clearSelection = () => {
-  selectedKeys.value.clear();
-};
 
 const showExportDialog = ref(false);
 const exportOptions = ref({
@@ -1152,16 +859,10 @@ const toggleTheme = () => {
   localStorage.setItem("msw-devtools-theme", theme.value);
 };
 
-const showOnlyModified = ref(
-  localStorage.getItem("msw-show-only-modified") === "true",
-);
-const searchInput = ref<HTMLInputElement | null>(null);
 const expandedLogId = ref<string | null>(null);
 const logFilterKey = ref<string | null>(null);
 const selectedMethods = ref<Set<string>>(new Set(["ALL"]));
 const logSearchPath = ref("");
-
-const newPresetName = ref("");
 
 const selectedPresetName = ref<string | null>(null);
 
@@ -1176,18 +877,16 @@ const getPresetKey = (name: string, isCustom: boolean) => {
     : `${PRESET_KEY_PREFIX_GLOBAL}${name}`;
 };
 
-// Helper to parse preset key back to name and type
-// Currently unused but provided for future extensibility if needed
-const parsePresetKey = (key: string) => {
-  if (key.startsWith(PRESET_KEY_PREFIX_CUSTOM)) {
-    return { name: key.slice(PRESET_KEY_PREFIX_CUSTOM.length), isCustom: true };
+const displayKey = (key: string) => {
+  const parts = key.split(" ");
+  if (parts.length > 1) {
+    return parts.slice(1).join(" ");
   }
-  return {
-    name: key.startsWith(PRESET_KEY_PREFIX_GLOBAL)
-      ? key.slice(PRESET_KEY_PREFIX_GLOBAL.length)
-      : key,
-    isCustom: false,
-  };
+  return key;
+};
+
+const isCustomScenario = (key: string, scenarioName: string) => {
+  return customScenarios[key] && customScenarios[key][scenarioName];
 };
 
 const allPresets = computed(() => {
@@ -1229,50 +928,6 @@ watch(
   },
   { immediate: true },
 );
-
-const saveCurrentAsPreset = () => {
-  if (!newPresetName.value.trim()) return;
-
-  const scenarios: Record<string, string> = {};
-
-  let keysToInclude: string[];
-  if (isSelectionMode.value && selectedKeys.value.size > 0) {
-    keysToInclude = Array.from(selectedKeys.value);
-  } else {
-    keysToInclude = Object.keys(scenarioRegistry);
-  }
-
-  keysToInclude.forEach((key) => {
-    const val = scenarioState[key];
-    if (val) {
-      scenarios[key] = val;
-    }
-  });
-
-  const name = newPresetName.value.trim();
-  const existingIndex = customPresets.findIndex((p) => p.name === name);
-
-  if (existingIndex !== -1) {
-    customPresets[existingIndex] = {
-      name,
-      scenarios,
-    };
-  } else {
-    customPresets.push({
-      name,
-      scenarios,
-    });
-  }
-
-  newPresetName.value = "";
-
-  if (isSelectionMode.value) {
-    isSelectionMode.value = false;
-    selectedKeys.value.clear();
-  }
-
-  activeTab.value = "presets";
-};
 
 const deleteCustomPreset = (name: string) => {
   const index = customPresets.findIndex((p) => p.name === name);
@@ -1392,9 +1047,8 @@ const viewLogForKey = (key: string) => {
   activeTab.value = "log";
 };
 
-const viewHandlerForKey = (key: string) => {
+const viewHandlerForKey = (_key: string) => {
   activeTab.value = "registry";
-  searchQuery.value = key;
 };
 
 /**
@@ -1507,11 +1161,6 @@ onUnmounted(() => {
   window.removeEventListener("keydown", handleKeyDown);
   document.removeEventListener("click", handleOutsideClick);
 });
-
-const focusSearch = async () => {
-  await nextTick();
-  searchInput.value?.focus();
-};
 
 const showResetMenu = ref(false);
 
@@ -1695,61 +1344,10 @@ const handleImport = (event: Event) => {
   reader.readAsText(file);
 };
 
-const isModified = (key: string) => {
-  const handler = scenarioRegistry[key];
-  const defaultScenario = handler?.isNative ? "original" : "default";
-
-  const scenarioModified =
-    scenarioState[key] && scenarioState[key] !== defaultScenario;
-  const delayModified = (handlerDelays[key] || 0) > 0;
-  const hasOverride = customOverrides[key]?.enabled;
-  return scenarioModified || delayModified || hasOverride;
-};
-
-const isCustomScenario = (key: string, scenario: string) => {
-  return !!customScenarios[key]?.[scenario];
-};
-
-const displayKey = (key: string) => {
-  const handler = scenarioRegistry[key];
-  if (handler?.isNative) {
-    return key.replace(/^\[[A-Z]+\]\s+/, "");
-  }
-  return key;
-};
-
 watch(isOpen, (newValue) => {
   if (newValue) {
-    focusSearch();
+    // focusSearch(); // Logic moved to child
   }
-});
-
-watch(searchQuery, (newFilter) => {
-  localStorage.setItem("msw-scenarios-filter", newFilter);
-});
-
-watch(showOnlyModified, (newValue) => {
-  localStorage.setItem("msw-show-only-modified", String(newValue));
-});
-
-const filteredRegistryKeys = computed(() => {
-  const query = searchQuery.value.toLowerCase();
-  return Object.keys(scenarioRegistry).filter((key) => {
-    const metadata = scenarioRegistry[key];
-    if (!metadata) return false;
-
-    // Filter by modified status if enabled
-    if (showOnlyModified.value && !isModified(key)) {
-      return false;
-    }
-
-    // Filter by search query
-    return (
-      key.toLowerCase().includes(query) ||
-      metadata.url.toLowerCase().includes(query) ||
-      metadata.method.toLowerCase().includes(query)
-    );
-  });
 });
 
 const filteredActivityLog = computed(() => {
@@ -2098,176 +1696,6 @@ const filteredActivityLog = computed(() => {
 .close-button:hover {
   background-color: var(--bg-tertiary);
   color: var(--text-main);
-}
-
-.selection-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: var(--accent-color);
-  color: white;
-  margin: 0.5rem 1rem 0;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.selection-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.selection-count {
-  font-weight: 600;
-}
-
-.selection-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.toolbar-input {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  padding: 0.4rem 0.75rem;
-  color: white;
-  font-size: 0.875rem;
-  outline: none;
-}
-
-.toolbar-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.toolbar-save-button {
-  background: white;
-  color: var(--accent-color);
-  border: none;
-  padding: 0.4rem 1rem;
-  border-radius: 4px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-.toolbar-save-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.col-selection {
-  width: 40px;
-  text-align: center;
-}
-
-.registry-table tr.is-selected {
-  background-color: var(--bg-tertiary) !important;
-}
-
-.registry-table tr.is-selected td {
-  border-bottom-color: var(--accent-color);
-}
-
-.search-container {
-  padding: 1rem 1.5rem;
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-}
-
-.search-wrapper {
-  position: relative;
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-
-.clear-search-button {
-  position: absolute;
-  right: 0.75rem;
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.clear-search-button:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-main);
-}
-
-.global-delay-control {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 400px;
-  flex-shrink: 0;
-  background-color: var(--bg-secondary);
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
-}
-
-.global-delay-control label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.global-delay-inputs {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-}
-
-.global-delay-number-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  width: 110px;
-  flex-shrink: 0;
-}
-
-.delay-slider {
-  flex: 1;
-  cursor: pointer;
-  accent-color: var(--accent-color);
-}
-
-.search-input {
-  width: 100%;
-  border-radius: 0.75rem;
-  border: 1px solid var(--border-color);
-  padding: 0.75rem 2.5rem 0.75rem 1rem;
-  font-size: 1rem;
-  color: var(--text-main);
-  background-color: var(--input-bg);
-  transition: all 0.2s;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.modified-filter {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
 }
 
 .registry-container {
@@ -2908,6 +2336,7 @@ const filteredActivityLog = computed(() => {
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -3088,123 +2517,6 @@ const filteredActivityLog = computed(() => {
   justify-content: center;
 }
 
-.registry-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  table-layout: fixed;
-}
-
-.registry-table th {
-  position: sticky;
-  top: 0;
-  background-color: var(--table-header-bg);
-  padding: 0.75rem 1rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-tertiary);
-  border-bottom: 1px solid var(--border-color);
-  z-index: 10;
-}
-
-.registry-table td {
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  vertical-align: middle;
-}
-
-.registry-table tr:hover {
-  background-color: var(--table-hover);
-}
-
-.registry-table tr.is-modified {
-  background-color: var(--accent-soft);
-}
-
-.col-status {
-  width: 50px;
-  text-align: center;
-}
-
-.status-indicators {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-}
-
-.native-indicator {
-  font-size: 0.65rem;
-  font-weight: 900;
-  color: var(--text-tertiary);
-  background-color: var(--bg-tertiary);
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-  flex-shrink: 0;
-}
-
-.col-method {
-  width: 100px;
-}
-.col-info {
-  width: auto;
-}
-.col-scenario {
-  width: 280px;
-}
-.col-delay {
-  width: 120px;
-}
-.col-actions {
-  width: 90px;
-  text-align: right;
-}
-
-.handler-delay-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.handler-delay-input {
-  width: 100%;
-  padding: 0.4rem 0.5rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--border-color);
-  font-size: 0.875rem;
-  font-variant-numeric: tabular-nums;
-  background-color: var(--input-bg);
-  color: var(--text-main);
-  transition: all 0.2s;
-}
-
-.handler-delay-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.ms-label {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-.modified-indicator {
-  width: 10px;
-  height: 10px;
-  background-color: var(--accent-color);
-  border-radius: 9999px;
-  display: inline-block;
-  flex-shrink: 0;
-}
-
 .method-badge {
   font-size: 0.75rem;
   font-weight: 800;
@@ -3264,37 +2576,6 @@ const filteredActivityLog = computed(() => {
   color: #f87171;
 }
 
-.handler-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  min-width: 0;
-}
-
-.url-wrapper {
-  font-family: "JetBrains Mono", "Fira Code", monospace;
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.key-text {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.title-with-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .native-badge {
   font-size: 0.65rem;
   font-weight: 700;
@@ -3311,30 +2592,6 @@ const filteredActivityLog = computed(() => {
 .native-badge.mini {
   font-size: 0.55rem;
   padding: 0.05rem 0.2rem;
-}
-
-.scenario-select {
-  width: 100%;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-main);
-  background-color: var(--input-bg);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.scenario-select:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.scenario-select.is-modified {
-  border-color: var(--accent-color);
-  background-color: var(--accent-soft);
-  font-weight: 600;
 }
 
 .empty-state {
