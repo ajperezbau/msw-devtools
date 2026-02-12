@@ -222,16 +222,18 @@
           </div>
         </div>
 
-        <RegistryView
-          v-show="activeTab === 'registry'"
-          ref="registryView"
-          v-model:searchQuery="searchQuery"
-          v-model:showOnlyModified="showOnlyModified"
-          :isSelectionMode="isSelectionMode"
-          @openOverrideEditor="openOverrideEditor"
-          @viewLogs="viewLogForKey"
-          @savePreset="handleSavePreset"
-        />
+        <KeepAlive>
+          <RegistryView
+            v-if="activeTab === 'registry'"
+            ref="registryView"
+            v-model:searchQuery="searchQuery"
+            v-model:showOnlyModified="showOnlyModified"
+            :isSelectionMode="isSelectionMode"
+            @openOverrideEditor="openOverrideEditor"
+            @viewLogs="viewLogForKey"
+            @savePreset="handleSavePreset"
+          />
+        </KeepAlive>
 
         <!-- Export Options Dialog -->
         <div v-if="showExportDialog" class="override-editor-overlay">
