@@ -223,7 +223,7 @@
         </div>
 
         <RegistryView
-          v-if="activeTab === 'registry'"
+          v-show="activeTab === 'registry'"
           ref="registryView"
           v-model:searchQuery="searchQuery"
           v-model:showOnlyModified="showOnlyModified"

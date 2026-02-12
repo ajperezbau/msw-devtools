@@ -49,6 +49,8 @@ export class DevToolsPage {
   async saveCurrentAsPreset(name: string) {
     await this.switchTab("Registry");
     await this.dialog.getByRole("button", { name: "Create Preset" }).click();
+    // Wait a bit for Vue to update the DOM
+    await this.page.waitForTimeout(100);
     await this.dialog.getByRole("button", { name: "Select Visible" }).click();
     await this.dialog.getByPlaceholder("Preset name...").fill(name);
     await this.dialog.getByRole("button", { name: "Save Selected" }).click();

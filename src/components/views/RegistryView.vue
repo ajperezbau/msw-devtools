@@ -251,7 +251,10 @@ const props = withDefaults(defineProps<Props>(), {
   isSelectionMode: false,
 });
 
-const { isSelectionMode } = toRefs(props);
+// Extract isSelectionMode with toRefs for proper reactivity
+const { isSelectionMode: isSelectionModeRef } = toRefs(props);
+// Create an unwrapped computed for template use  
+const isSelectionMode = computed(() => isSelectionModeRef.value);
 
 const emit = defineEmits<{
   (e: "update:searchQuery", value: string): void;
