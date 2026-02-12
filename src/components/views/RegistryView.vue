@@ -225,7 +225,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, toRefs } from "vue";
 import MswCheckbox from "../MswCheckbox.vue";
 import CloseIcon from "../../assets/icons/CloseIcon.vue";
 import EditIcon from "../../assets/icons/EditIcon.vue";
@@ -250,6 +250,8 @@ const props = withDefaults(defineProps<Props>(), {
   showOnlyModified: false,
   isSelectionMode: false,
 });
+
+const { isSelectionMode } = toRefs(props);
 
 const emit = defineEmits<{
   (e: "update:searchQuery", value: string): void;
@@ -355,7 +357,7 @@ const handleSavePreset = () => {
 };
 
 // Watch for selection mode changes to clear selection
-watch(() => props.isSelectionMode, (newVal) => {
+watch(isSelectionMode, (newVal) => {
   if (!newVal) {
     selectedKeys.value.clear();
   }
