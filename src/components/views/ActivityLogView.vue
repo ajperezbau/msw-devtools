@@ -25,13 +25,13 @@
       </div>
     </div>
 
-    <div v-if="logFilterKey" class="log-filter-banner">
+    <div v-if="filterKey" class="log-filter-banner">
       <span class="filter-info">
-        Showing logs for: <strong>{{ logFilterKey }}</strong>
+        Showing logs for: <strong>{{ filterKey }}</strong>
       </span>
       <button
         type="button"
-        @click="logFilterKey = null"
+        @click="$emit('update:filterKey', null)"
         class="clear-filter-button"
       >
         Show All Logs
@@ -40,7 +40,7 @@
 
     <div v-if="filteredActivityLog.length === 0" class="empty-state">
       {{
-        logFilterKey
+        filterKey
           ? "No requests recorded for this handler."
           : "No requests recorded yet."
       }}
@@ -293,14 +293,9 @@ const expandedLogId = ref<string | null>(null);
 const selectedMethods = ref<Set<string>>(new Set(["ALL"]));
 const logSearchPath = ref("");
 
-const logFilterKey = computed({
-  get: () => props.filterKey ?? null,
-  set: (value) => emit("update:filterKey", value),
-});
-
 const filteredActivityLog = computed(() => {
   return activityLog.filter((entry) => {
-    const matchesKey = !logFilterKey.value || entry.key === logFilterKey.value;
+    const matchesKey = !props.filterKey || entry.key === props.filterKey;
     const matchesMethod =
       selectedMethods.value.has("ALL") ||
       selectedMethods.value.has(entry.method);
