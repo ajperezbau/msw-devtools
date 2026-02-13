@@ -1,15 +1,17 @@
 <template>
   <div class="search-container">
     <div class="search-wrapper">
-      <input
+      <MswInput
         v-model="searchQuery"
         type="text"
         placeholder="Filter by key, URL or method..."
         class="search-input"
       />
-      <button
+      <MswButton
         v-if="searchQuery"
         type="button"
+        variant="icon"
+        size="sm"
         @click="searchQuery = ''"
         class="clear-search-button"
         title="Clear search"
@@ -28,7 +30,7 @@
             d="M6 18L18 6M6 6l12 12"
           />
         </svg>
-      </button>
+      </MswButton>
     </div>
     <div class="modified-filter">
       <MswCheckbox v-model="showOnlyModified"> Modified only </MswCheckbox>
@@ -67,25 +69,44 @@
       <span class="selection-count"
         >{{ selectedKeys.size }} handlers selected</span
       >
-      <button @click="selectAllVisible" class="text-button">
+      <MswButton
+        type="button"
+        variant="ghost"
+        size="sm"
+        @click="selectAllVisible"
+        class="text-button"
+      >
         Select Visible
-      </button>
-      <button @click="clearSelection" class="text-button">Clear</button>
+      </MswButton>
+      <MswButton
+        type="button"
+        variant="ghost"
+        size="sm"
+        @click="clearSelection"
+        class="text-button"
+      >
+        Clear
+      </MswButton>
     </div>
     <div class="selection-actions">
-      <input
+      <MswInput
         v-model="newPresetName"
         placeholder="Preset name..."
+        variant="inline"
+        size="sm"
         class="toolbar-input"
         @keyup.enter="saveCurrentAsPreset"
       />
-      <button
+      <MswButton
+        type="button"
+        variant="secondary"
+        size="sm"
         @click="saveCurrentAsPreset"
         :disabled="!newPresetName || selectedKeys.size === 0"
         class="toolbar-save-button"
       >
         Save Selected
-      </button>
+      </MswButton>
     </div>
   </div>
 
@@ -150,13 +171,11 @@
             </div>
           </td>
           <td class="col-method">
-            <span
+            <MswBadge
               v-if="scenarioRegistry[key]"
-              class="method-badge"
-              :class="[scenarioRegistry[key].method.toLowerCase()]"
-            >
-              {{ scenarioRegistry[key].method }}
-            </span>
+              variant="method"
+              :label="scenarioRegistry[key].method"
+            />
           </td>
           <td class="col-info">
             <div class="handler-info" v-if="scenarioRegistry[key]">
@@ -203,8 +222,10 @@
           </td>
           <td class="col-actions">
             <div class="action-buttons">
-              <button
+              <MswButton
                 type="button"
+                variant="icon"
+                size="sm"
                 @click.stop="emit('open-override', key)"
                 class="icon-button"
                 :class="{ 'has-override': customOverrides[key]?.enabled }"
@@ -224,9 +245,11 @@
                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                   />
                 </svg>
-              </button>
-              <button
+              </MswButton>
+              <MswButton
                 type="button"
+                variant="icon"
+                size="sm"
                 @click.stop="emit('view-log', key)"
                 class="icon-button"
                 title="View logs for this handler"
@@ -245,7 +268,7 @@
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
                   />
                 </svg>
-              </button>
+              </MswButton>
             </div>
           </td>
         </tr>
@@ -256,7 +279,10 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import MswBadge from "./MswBadge.vue";
+import MswButton from "./MswButton.vue";
 import MswCheckbox from "./MswCheckbox.vue";
+import MswInput from "./MswInput.vue";
 import {
   scenarioRegistry,
   scenarioState,
@@ -437,24 +463,12 @@ watch(showOnlyModified, (newValue) => {
   align-items: center;
 }
 
-.search-input {
-  width: 100%;
-  border-radius: 0.75rem;
-  border: 1px solid var(--border-color);
-  padding: 0.75rem 2.5rem 0.75rem 1rem;
+.search-input.msw-input {
+  padding-right: 2.5rem;
   font-size: 1rem;
-  color: var(--text-main);
-  background-color: var(--input-bg);
-  transition: all 0.2s;
 }
 
-.search-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.clear-search-button {
+.clear-search-button.msw-button {
   position: absolute;
   right: 0.75rem;
   background: none;
@@ -467,9 +481,11 @@ watch(showOnlyModified, (newValue) => {
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  width: auto;
+  height: auto;
 }
 
-.clear-search-button:hover {
+.clear-search-button.msw-button:hover {
   background-color: var(--bg-tertiary);
   color: var(--text-main);
 }
@@ -566,7 +582,7 @@ watch(showOnlyModified, (newValue) => {
   font-weight: 600;
 }
 
-.text-button {
+.text-button.msw-button {
   background: transparent;
   border: none;
   color: white;
@@ -574,6 +590,7 @@ watch(showOnlyModified, (newValue) => {
   font-weight: 600;
   cursor: pointer;
   text-decoration: underline;
+  padding: 0;
 }
 
 .selection-actions {
@@ -582,7 +599,7 @@ watch(showOnlyModified, (newValue) => {
   gap: 0.75rem;
 }
 
-.toolbar-input {
+.toolbar-input.msw-input {
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
@@ -592,11 +609,11 @@ watch(showOnlyModified, (newValue) => {
   outline: none;
 }
 
-.toolbar-input::placeholder {
+.toolbar-input.msw-input::placeholder {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.toolbar-save-button {
+.toolbar-save-button.msw-button {
   background: white;
   color: var(--accent-color);
   border: none;
@@ -607,7 +624,7 @@ watch(showOnlyModified, (newValue) => {
   font-size: 0.875rem;
 }
 
-.toolbar-save-button:disabled {
+.toolbar-save-button.msw-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -720,57 +737,6 @@ watch(showOnlyModified, (newValue) => {
   width: 100px;
 }
 
-.method-badge {
-  font-size: 0.75rem;
-  font-weight: 800;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  text-transform: uppercase;
-  display: inline-block;
-}
-
-.theme-light .method-badge.get {
-  background-color: #dcfce7;
-  color: #166534;
-}
-.theme-light .method-badge.post {
-  background-color: #fef9c3;
-  color: #854d0e;
-}
-.theme-light .method-badge.put {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-.theme-light .method-badge.patch {
-  background-color: #f3e8ff;
-  color: #6b21a8;
-}
-.theme-light .method-badge.delete {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.theme-dark .method-badge.get {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-}
-.theme-dark .method-badge.post {
-  background-color: rgba(234, 179, 8, 0.2);
-  color: #facc15;
-}
-.theme-dark .method-badge.put {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-}
-.theme-dark .method-badge.patch {
-  background-color: rgba(168, 85, 247, 0.2);
-  color: #c084fc;
-}
-.theme-dark .method-badge.delete {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-}
-
 .col-info {
   width: auto;
 }
@@ -846,21 +812,6 @@ watch(showOnlyModified, (newValue) => {
 .action-buttons {
   display: flex;
   gap: 0.25rem;
-}
-
-.icon-button {
-  color: var(--text-tertiary);
-  padding: 0.4rem;
-  border-radius: 0.5rem;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.icon-button:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--accent-color);
 }
 
 .icon-button.has-override {

@@ -2,10 +2,12 @@
   <div class="log-container">
     <div class="log-header">
       <div class="log-filters">
-        <button
+        <MswButton
           v-for="method in ['ALL', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE']"
           :key="method"
           type="button"
+          variant="ghost"
+          size="sm"
           @click="toggleMethod(method)"
           class="method-toggle-btn"
           :class="{
@@ -14,28 +16,33 @@
           }"
         >
           {{ method }}
-        </button>
+        </MswButton>
       </div>
-      <button
+      <MswButton
+        type="button"
+        variant="secondary"
+        size="sm"
         @click="clearActivityLog"
         class="clear-log-button"
         title="Clear logs"
       >
         Clear
-      </button>
+      </MswButton>
     </div>
 
     <div v-if="filterKey" class="log-filter-banner">
       <span class="filter-info">
         Showing logs for: <strong>{{ filterKey }}</strong>
       </span>
-      <button
+      <MswButton
         type="button"
+        variant="ghost"
+        size="sm"
         @click="emit('update:filterKey', null)"
         class="clear-filter-button"
       >
         Show All Logs
-      </button>
+      </MswButton>
     </div>
 
     <div v-if="filteredActivityLog.length === 0" class="empty-state">
@@ -58,9 +65,7 @@
       >
         <div class="log-entry-header" @click="toggleLogEntry(entry.id)">
           <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
-          <span class="method-badge" :class="[entry.method.toLowerCase()]">{{
-            entry.method
-          }}</span>
+          <MswBadge variant="method" :label="entry.method" />
           <div class="log-url" :title="entry.url">
             {{ entry.url }}
           </div>
@@ -74,14 +79,17 @@
           <div class="log-scenario-info">
             <div class="log-key-wrapper">
               <span class="log-key">{{ displayKey(entry.key) }}</span>
-              <span
+              <MswBadge
                 v-if="scenarioRegistry[entry.key]?.isNative"
-                class="native-badge mini"
+                variant="native"
+                label="Native"
+                size="sm"
                 title="Native MSW handler"
-                >Native</span
-              >
-              <button
+              />
+              <MswButton
                 type="button"
+                variant="icon"
+                size="sm"
                 @click.stop="emit('view-handler', entry.key)"
                 class="mini-icon-button"
                 title="View in Registry"
@@ -100,19 +108,14 @@
                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                   />
                 </svg>
-              </button>
+              </MswButton>
             </div>
             <span class="log-scenario">
               {{ entry.scenario
               }}{{ isCustomScenario(entry.key, entry.scenario) ? " ✨" : "" }}
             </span>
           </div>
-          <span
-            class="status-badge"
-            :class="{ 'status-error': entry.status >= 400 }"
-          >
-            {{ entry.status }}
-          </span>
+          <MswBadge variant="status" :label="String(entry.status)" />
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="expand-icon h-4 w-4"
@@ -148,13 +151,20 @@
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <input
+              <MswInput
                 v-model="logSearchPath"
                 placeholder="Filter JSON (e.g. data.items.*.id)"
+                variant="inline"
+                size="sm"
                 class="json-search-input"
               />
               <div class="json-help-wrapper">
-                <button type="button" class="json-help-icon">
+                <MswButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  class="json-help-icon"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     class="h-4 w-4"
@@ -169,7 +179,7 @@
                       d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                </button>
+                </MswButton>
                 <div class="custom-tooltip">
                   <strong>JSON Path filtering:</strong>
                   <div>• Use <b>.</b> for nesting (e.g., data.id)</div>
@@ -183,15 +193,17 @@
                   </div>
                 </div>
               </div>
-              <button
+              <MswButton
                 v-if="logSearchPath"
                 type="button"
+                variant="ghost"
+                size="sm"
                 @click="logSearchPath = ''"
                 class="clear-json-search"
                 title="Clear filter"
               >
                 &times;
-              </button>
+              </MswButton>
             </div>
           </div>
 
@@ -203,8 +215,10 @@
             <div class="details-header">
               <h4 class="details-title">Request Body</h4>
               <div class="details-actions">
-                <button
+                <MswButton
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   @click="
                     copyToClipboard(
                       getFilteredJson(entry.requestBody, logSearchPath),
@@ -214,7 +228,7 @@
                   title="Copy to clipboard"
                 >
                   Copy
-                </button>
+                </MswButton>
               </div>
             </div>
             <pre class="details-content">{{
@@ -229,8 +243,10 @@
             <div class="details-header">
               <h4 class="details-title">Response Body</h4>
               <div class="details-actions">
-                <button
+                <MswButton
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   @click="
                     copyToClipboard(
                       getFilteredJson(entry.responseBody, logSearchPath),
@@ -240,14 +256,16 @@
                   title="Copy to clipboard"
                 >
                   Copy
-                </button>
-                <button
+                </MswButton>
+                <MswButton
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   @click="emit('open-override', entry)"
                   class="mini-action-button"
                 >
                   Use as manual override
-                </button>
+                </MswButton>
               </div>
             </div>
             <pre class="details-content">{{
@@ -262,6 +280,9 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import MswBadge from "./MswBadge.vue";
+import MswButton from "./MswButton.vue";
+import MswInput from "./MswInput.vue";
 import {
   activityLog,
   clearActivityLog,
@@ -413,7 +434,7 @@ const filteredActivityLog = computed(() => {
   gap: 0.25rem;
 }
 
-.method-toggle-btn {
+.method-toggle-btn.msw-button {
   padding: 0.25rem 0.5rem;
   border-radius: 0.375rem;
   border: 1px solid var(--border-color);
@@ -425,39 +446,78 @@ const filteredActivityLog = computed(() => {
   transition: all 0.2s;
 }
 
-.method-toggle-btn:hover {
+.method-toggle-btn.msw-button:hover {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
 }
 
-.method-toggle-btn.active {
+.method-toggle-btn.msw-button.active {
   background: var(--accent-color);
   color: white;
   border-color: var(--accent-color);
 }
 
-.method-toggle-btn.active.get {
-  background-color: #22c55e;
-  border-color: #22c55e;
-}
-.method-toggle-btn.active.post {
-  background-color: #eab308;
-  border-color: #eab308;
-}
-.method-toggle-btn.active.put {
-  background-color: #3b82f6;
-  border-color: #3b82f6;
-}
-.method-toggle-btn.active.patch {
-  background-color: #a855f7;
-  border-color: #a855f7;
-}
-.method-toggle-btn.active.delete {
-  background-color: #ef4444;
-  border-color: #ef4444;
+.theme-light .method-toggle-btn.msw-button.active.get {
+  background-color: #dcfce7;
+  color: #166534;
+  border-color: #dcfce7;
 }
 
-.clear-log-button {
+.theme-light .method-toggle-btn.msw-button.active.post {
+  background-color: #fef9c3;
+  color: #854d0e;
+  border-color: #fef9c3;
+}
+
+.theme-light .method-toggle-btn.msw-button.active.put {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-color: #dbeafe;
+}
+
+.theme-light .method-toggle-btn.msw-button.active.patch {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+  border-color: #f3e8ff;
+}
+
+.theme-light .method-toggle-btn.msw-button.active.delete {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-color: #fee2e2;
+}
+
+.theme-dark .method-toggle-btn.msw-button.active.get {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.theme-dark .method-toggle-btn.msw-button.active.post {
+  background-color: rgba(234, 179, 8, 0.2);
+  color: #facc15;
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.theme-dark .method-toggle-btn.msw-button.active.put {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.theme-dark .method-toggle-btn.msw-button.active.patch {
+  background-color: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.theme-dark .method-toggle-btn.msw-button.active.delete {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.clear-log-button.msw-button {
   padding: 0.25rem 0.75rem;
   border-radius: 0.375rem;
   border: 1px solid var(--border-color);
@@ -468,7 +528,7 @@ const filteredActivityLog = computed(() => {
   cursor: pointer;
 }
 
-.clear-log-button:hover {
+.clear-log-button.msw-button:hover {
   background: var(--bg-tertiary);
   color: var(--text-main);
 }
@@ -487,7 +547,7 @@ const filteredActivityLog = computed(() => {
   color: var(--text-secondary);
 }
 
-.clear-filter-button {
+.clear-filter-button.msw-button {
   background: none;
   border: none;
   color: var(--accent-color);
@@ -495,6 +555,7 @@ const filteredActivityLog = computed(() => {
   font-weight: 700;
   cursor: pointer;
   text-decoration: underline;
+  padding: 0;
 }
 
 .log-list {
@@ -582,32 +643,6 @@ const filteredActivityLog = computed(() => {
   color: var(--accent-color);
 }
 
-.status-badge {
-  min-width: 35px;
-  text-align: center;
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.375rem;
-  background-color: #dcfce7;
-  color: #166534;
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.theme-dark .status-badge {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-}
-
-.status-badge.status-error {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.theme-dark .status-badge.status-error {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-}
-
 .expand-icon {
   color: var(--text-tertiary);
   transition: transform 0.2s;
@@ -642,7 +677,7 @@ const filteredActivityLog = computed(() => {
   margin: 0;
 }
 
-.mini-action-button {
+.mini-action-button.msw-button {
   font-size: 0.65rem;
   background-color: var(--bg-tertiary);
   color: var(--text-secondary);
@@ -653,7 +688,7 @@ const filteredActivityLog = computed(() => {
   font-weight: 600;
 }
 
-.mini-action-button:hover {
+.mini-action-button.msw-button:hover {
   background-color: var(--accent-color);
   color: white;
   border-color: var(--accent-color);
@@ -675,75 +710,6 @@ const filteredActivityLog = computed(() => {
 
 .theme-dark .details-content {
   background-color: #121212;
-}
-
-.method-badge {
-  font-size: 0.75rem;
-  font-weight: 800;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  text-transform: uppercase;
-  display: inline-block;
-}
-
-.theme-light .method-badge.get {
-  background-color: #dcfce7;
-  color: #166534;
-}
-.theme-light .method-badge.post {
-  background-color: #fef9c3;
-  color: #854d0e;
-}
-.theme-light .method-badge.put {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-.theme-light .method-badge.patch {
-  background-color: #f3e8ff;
-  color: #6b21a8;
-}
-.theme-light .method-badge.delete {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.theme-dark .method-badge.get {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-}
-.theme-dark .method-badge.post {
-  background-color: rgba(234, 179, 8, 0.2);
-  color: #facc15;
-}
-.theme-dark .method-badge.put {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-}
-.theme-dark .method-badge.patch {
-  background-color: rgba(168, 85, 247, 0.2);
-  color: #c084fc;
-}
-.theme-dark .method-badge.delete {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-}
-
-.native-badge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 0.1rem 0.35rem;
-  border-radius: 0.25rem;
-  background-color: var(--bg-tertiary);
-  color: var(--text-tertiary);
-  border: 1px solid var(--border-color);
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-  flex-shrink: 0;
-}
-
-.native-badge.mini {
-  font-size: 0.55rem;
-  padding: 0.05rem 0.2rem;
 }
 
 .empty-state {
@@ -775,7 +741,7 @@ const filteredActivityLog = computed(() => {
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-.json-search-input {
+.json-search-input.msw-input {
   flex: 1;
   border: none;
   outline: none;
@@ -789,7 +755,7 @@ const filteredActivityLog = computed(() => {
   color: var(--text-tertiary);
 }
 
-.json-help-icon {
+.json-help-icon.msw-button {
   background: none;
   border: none;
   padding: 0.25rem;
@@ -801,7 +767,7 @@ const filteredActivityLog = computed(() => {
   border-radius: 0.25rem;
 }
 
-.json-help-icon:hover {
+.json-help-icon.msw-button:hover {
   color: var(--text-secondary);
   background-color: var(--bg-tertiary);
 }
@@ -846,7 +812,7 @@ const filteredActivityLog = computed(() => {
   opacity: 1;
 }
 
-.clear-json-search {
+.clear-json-search.msw-button {
   background: none;
   border: none;
   color: var(--text-tertiary);
@@ -859,11 +825,11 @@ const filteredActivityLog = computed(() => {
   justify-content: center;
 }
 
-.clear-json-search:hover {
+.clear-json-search.msw-button:hover {
   color: var(--text-main);
 }
 
-.mini-icon-button {
+.mini-icon-button.msw-button {
   background: none;
   border: none;
   color: var(--text-tertiary);
@@ -876,7 +842,7 @@ const filteredActivityLog = computed(() => {
   transition: all 0.2s;
 }
 
-.mini-icon-button:hover {
+.mini-icon-button.msw-button:hover {
   background-color: var(--bg-tertiary);
   color: var(--accent-color);
 }

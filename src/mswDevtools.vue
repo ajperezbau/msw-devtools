@@ -12,34 +12,42 @@
       <div class="panel-header">
         <h2 id="msw-devtools-title" class="panel-title">MSW Devtools</h2>
         <div class="tab-buttons">
-          <button
+          <MswButton
             type="button"
+            variant="ghost"
+            size="sm"
             @click="activeTab = 'registry'"
             class="tab-button"
             :class="{ active: activeTab === 'registry' }"
           >
             Registry
-          </button>
-          <button
+          </MswButton>
+          <MswButton
             type="button"
+            variant="ghost"
+            size="sm"
             @click="activeTab = 'presets'"
             class="tab-button"
             :class="{ active: activeTab === 'presets' }"
           >
             Presets
-          </button>
-          <button
+          </MswButton>
+          <MswButton
             type="button"
+            variant="ghost"
+            size="sm"
             @click="activeTab = 'log'"
             class="tab-button"
             :class="{ active: activeTab === 'log' }"
           >
             Activity Log ({{ activityLog.length }})
-          </button>
+          </MswButton>
         </div>
         <div class="panel-actions">
-          <button
+          <MswButton
             type="button"
+            variant="icon"
+            size="sm"
             @click="toggleTheme"
             class="theme-toggle-button"
             :title="
@@ -80,10 +88,12 @@
               <path d="m6.34 17.66-1.41 1.41" />
               <path d="m19.07 4.93-1.41 1.41" />
             </svg>
-          </button>
+          </MswButton>
           <div class="button-group">
-            <button
+            <MswButton
               type="button"
+              variant="icon"
+              size="sm"
               @click="showExportDialog = true"
               class="export-button"
               title="Export scenarios to JSON"
@@ -103,9 +113,11 @@
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
                 />
               </svg>
-            </button>
-            <button
+            </MswButton>
+            <MswButton
               type="button"
+              variant="icon"
+              size="sm"
               @click="triggerImport"
               class="import-button"
               title="Import scenarios from JSON"
@@ -125,10 +137,12 @@
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                 />
               </svg>
-            </button>
-            <button
+            </MswButton>
+            <MswButton
               v-if="activeTab === 'registry'"
               type="button"
+              variant="icon"
+              size="sm"
               @click="registryViewRef?.toggleSelectionMode()"
               class="import-button"
               :class="{ active: registryViewRef?.isSelectionMode }"
@@ -149,17 +163,19 @@
                   d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
                 />
               </svg>
-            </button>
+            </MswButton>
           </div>
-          <button
+          <MswButton
             v-if="activeTab === 'log'"
             type="button"
+            variant="secondary"
+            size="sm"
             @click="clearActivityLog"
             class="clear-button"
             title="Clear log"
           >
             Clear Log
-          </button>
+          </MswButton>
           <input
             type="file"
             ref="importFile"
@@ -168,10 +184,12 @@
             @change="handleImport"
           />
           <div class="reset-menu-container" ref="resetMenuContainer">
-            <button
+            <MswButton
               type="button"
+              variant="secondary"
+              size="sm"
               @click="showResetMenu = !showResetMenu"
-              class="clear-button reset-button"
+              class="reset-button"
               :class="{ 'menu-open': showResetMenu }"
               title="Reset options"
             >
@@ -191,26 +209,41 @@
                   d="M19 9l-7 7-7-7"
                 />
               </svg>
-            </button>
+            </MswButton>
             <div v-if="showResetMenu" class="reset-dropdown">
-              <button type="button" @click="resetScenariosOnly">
+              <MswButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                @click="resetScenariosOnly"
+              >
                 Reset Scenarios Only
-              </button>
-              <button type="button" @click="clearConfigs" class="danger">
+              </MswButton>
+              <MswButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                @click="clearConfigs"
+                class="danger"
+              >
                 Reset All (Full)
-              </button>
+              </MswButton>
             </div>
           </div>
-          <button
+          <MswButton
             type="button"
+            variant="primary"
+            size="sm"
             @click="reloadPage"
             class="reload-button"
             title="Apply & Reload (Ctrl + Enter)"
           >
             Apply & Reload
-          </button>
-          <button
+          </MswButton>
+          <MswButton
             type="button"
+            variant="icon"
+            size="sm"
             @click="isOpen = false"
             class="close-button"
             title="Close"
@@ -229,7 +262,7 @@
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
-          </button>
+          </MswButton>
         </div>
       </div>
 
@@ -241,105 +274,12 @@
         @preset-created="activeTab = 'presets'"
       />
 
-      <!-- Export Options Dialog -->
-      <div v-if="showExportDialog" class="override-editor-overlay">
-        <div class="override-editor-content">
-          <div class="editor-header">
-            <h3>Export Options</h3>
-            <button
-              type="button"
-              @click="showExportDialog = false"
-              class="close-button"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-          <div class="editor-body">
-            <p style="margin-bottom: 1rem; color: var(--text-secondary)">
-              Select what you want to include in the export:
-            </p>
-            <div class="export-options-list">
-              <MswCheckbox
-                v-model="allOptionsSelected"
-                :label-style="{
-                  marginBottom: '1rem',
-                  paddingBottom: '0.75rem',
-                  borderBottom: '1px solid var(--border-color)',
-                }"
-              >
-                <span style="font-weight: 700">Select All</span>
-              </MswCheckbox>
-              <MswCheckbox
-                v-model="exportOptions.scenarios"
-                :label-style="{ marginBottom: '0.75rem' }"
-              >
-                Active Scenarios Selection
-              </MswCheckbox>
-              <MswCheckbox
-                v-model="exportOptions.customScenarios"
-                :label-style="{ marginBottom: '0.75rem' }"
-              >
-                Custom Handlers (JSON scenarios)
-              </MswCheckbox>
-              <MswCheckbox
-                v-model="exportOptions.customPresets"
-                :label-style="{ marginBottom: '0.75rem' }"
-              >
-                Custom Presets (Recipes)
-              </MswCheckbox>
-              <MswCheckbox
-                v-model="exportOptions.overrides"
-                :label-style="{ marginBottom: '0.75rem' }"
-              >
-                Manual Overrides
-              </MswCheckbox>
-              <MswCheckbox
-                v-model="exportOptions.delays"
-                :label-style="{ marginBottom: '0.75rem' }"
-              >
-                Handler Delays
-              </MswCheckbox>
-              <MswCheckbox
-                v-model="exportOptions.globalDelay"
-                :label-style="{ marginBottom: '0.75rem' }"
-              >
-                Global Delay Settings
-              </MswCheckbox>
-            </div>
-          </div>
-          <div class="editor-footer">
-            <button
-              type="button"
-              @click="showExportDialog = false"
-              class="secondary-button"
-            >
-              Cancel
-            </button>
-            <div class="spacer"></div>
-            <button
-              type="button"
-              @click="exportScenarios"
-              class="primary-button"
-              :disabled="Object.values(exportOptions).every((v) => !v)"
-            >
-              Download JSON
-            </button>
-          </div>
-        </div>
-      </div>
+      <ExportOptionsModal
+        v-if="showExportDialog"
+        v-model:options="exportOptions"
+        @close="showExportDialog = false"
+        @export="exportScenarios"
+      />
 
       <OverrideEditor
         v-if="editingOverrideKey"
@@ -362,12 +302,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import MswCheckbox from "./components/MswCheckbox.vue";
+import MswButton from "./components/MswButton.vue";
 import MswToggle from "./components/MswToggle.vue";
 import RegistryView from "./components/RegistryView.vue";
 import PresetsView from "./components/PresetsView.vue";
 import ActivityLogView from "./components/ActivityLogView.vue";
 import OverrideEditor from "./components/OverrideEditor.vue";
+import ExportOptionsModal from "./components/ExportOptionsModal.vue";
 import {
   activityLog,
   clearActivityLog,
@@ -398,15 +339,6 @@ const exportOptions = ref({
   customScenarios: true,
   customPresets: true,
   globalDelay: true,
-});
-
-const allOptionsSelected = computed({
-  get: () => Object.values(exportOptions.value).every((v) => v),
-  set: (value) => {
-    Object.keys(exportOptions.value).forEach((key) => {
-      (exportOptions.value as any)[key] = value;
-    });
-  },
 });
 
 const toggleTheme = () => {
@@ -817,7 +749,7 @@ watch(isOpen, (newValue) => {
   border-radius: 0.75rem;
 }
 
-.tab-button {
+.tab-button.msw-button {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 700;
@@ -829,12 +761,12 @@ watch(isOpen, (newValue) => {
   transition: all 0.2s;
 }
 
-.tab-button:hover {
+.tab-button.msw-button:hover {
   background-color: var(--bg-secondary);
   color: var(--text-main);
 }
 
-.tab-button.active {
+.tab-button.msw-button.active {
   background-color: var(--bg-main);
   color: var(--accent-color);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -847,85 +779,37 @@ watch(isOpen, (newValue) => {
   align-items: center;
 }
 
-.clear-button,
-.export-button,
-.import-button,
-.theme-toggle-button {
-  background-color: var(--bg-main);
-  color: var(--text-secondary);
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.export-button,
-.import-button,
-.theme-toggle-button {
-  padding: 0.5rem;
-  width: 2.5rem;
-  height: 2.5rem;
-}
-
 .button-group {
   display: flex;
   align-items: center;
 }
 
-.button-group button {
+.button-group .msw-button {
   border-radius: 0;
   margin-left: -1px;
+  position: relative;
 }
 
-.button-group button:first-child {
+.button-group .msw-button:first-child {
   border-top-left-radius: 0.5rem;
   border-bottom-left-radius: 0.5rem;
   margin-left: 0;
 }
 
-.button-group button:last-child {
+.button-group .msw-button:last-child {
   border-top-right-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
 }
 
-.button-group button.active {
+.button-group .msw-button.active {
   background-color: var(--accent-color);
   border-color: var(--accent-color);
   color: white;
   z-index: 2;
 }
 
-.clear-button:hover,
-.export-button:hover,
-.import-button:hover,
-.theme-toggle-button:hover {
-  background-color: var(--bg-tertiary);
-  border-color: var(--accent-color);
-  color: var(--accent-color);
-  z-index: 1;
-}
-
-.reload-button {
-  background-color: var(--accent-color);
-  color: white;
-  padding: 0.5rem 1.25rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.reload-button:hover {
-  background-color: var(--accent-hover);
+.button-group .msw-button:hover {
+  z-index: 2;
 }
 
 .reset-menu-container {
@@ -950,11 +834,14 @@ watch(isOpen, (newValue) => {
   flex-direction: column;
 }
 
-.reset-dropdown button {
+.reset-dropdown .msw-button {
+  width: 100%;
+  justify-content: flex-start;
   padding: 0.75rem 1rem;
   text-align: left;
   background: none;
-  border: none;
+  border: 0;
+  border-radius: 0;
   color: var(--text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
@@ -962,25 +849,25 @@ watch(isOpen, (newValue) => {
   white-space: nowrap;
 }
 
-.reset-dropdown button:hover {
+.reset-dropdown .msw-button:hover {
   background-color: var(--bg-tertiary);
   color: var(--accent-color);
 }
 
-.reset-dropdown button.danger {
+.reset-dropdown .msw-button.danger {
   color: #ef4444;
   border-top: 1px solid var(--border-color);
 }
 
-.reset-dropdown button.danger:hover {
+.reset-dropdown .msw-button.danger:hover {
   background-color: #fef2f2;
 }
 
-.theme-dark .reset-dropdown button.danger:hover {
+.theme-dark .reset-dropdown .msw-button.danger:hover {
   background-color: #450a0a;
 }
 
-.reset-button.menu-open {
+.reset-button.msw-button.menu-open {
   border-color: var(--accent-color);
   color: var(--accent-color);
 }
@@ -991,51 +878,5 @@ watch(isOpen, (newValue) => {
 
 .rotate-180 {
   transform: rotate(180deg);
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-}
-
-.close-button:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-main);
-}
-
-.export-options-list {
-  display: flex;
-  flex-direction: column;
-  padding: 0.5rem 0;
-}
-
-.override-editor-overlay {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 2rem;
-}
-
-.override-editor-content {
-  background-color: var(--bg-main);
-  border-radius: 0.75rem;
-  width: 100%;
-  max-width: 600px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--modal-shadow);
-  max-height: 80vh;
-  border: 1px solid var(--border-color);
 }
 </style>

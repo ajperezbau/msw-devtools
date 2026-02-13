@@ -6,10 +6,12 @@
     </div>
     <div v-else class="presets-split">
       <div class="presets-list" role="list">
-        <button
+        <MswButton
           v-for="preset in allPresets"
           :key="preset.key"
           type="button"
+          variant="ghost"
+          size="md"
           class="presets-list-item"
           :class="{ active: preset.key === selectedPresetName }"
           :aria-pressed="preset.key === selectedPresetName"
@@ -35,7 +37,7 @@
               {{ preset.description }}
             </span>
           </div>
-        </button>
+        </MswButton>
       </div>
       <div v-if="selectedPreset" class="presets-detail">
         <div
@@ -54,16 +56,20 @@
                   >
                 </div>
                 <div class="preset-title-actions">
-                  <button
+                  <MswButton
                     type="button"
+                    variant="primary"
+                    size="sm"
                     @click="applyPreset(selectedPreset.name)"
                     class="apply-preset-button compact"
                   >
                     Apply Preset
-                  </button>
-                  <button
+                  </MswButton>
+                  <MswButton
                     v-if="selectedPreset.isCustom"
                     type="button"
+                    variant="icon"
+                    size="sm"
                     @click="deleteCustomPreset(selectedPreset.name)"
                     class="delete-preset-button"
                     title="Delete preset"
@@ -83,7 +89,7 @@
                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                       />
                     </svg>
-                  </button>
+                  </MswButton>
                 </div>
               </div>
               <p v-if="selectedPreset.description" class="preset-description">
@@ -98,13 +104,12 @@
                 :title="`${hKey}: ${scenario}`"
               >
                 <span class="preview-line">
-                  <span
+                  <MswBadge
                     v-if="scenarioRegistry && scenarioRegistry[hKey]"
-                    class="method-badge mini"
-                    :class="[scenarioRegistry[hKey].method?.toLowerCase()]"
-                  >
-                    {{ scenarioRegistry[hKey].method }}
-                  </span>
+                    variant="method"
+                    :label="scenarioRegistry[hKey].method"
+                    size="sm"
+                  />
                   <span class="preview-scenario">{{ scenario }}</span>
                 </span>
                 <span class="preview-text">
@@ -124,6 +129,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import MswBadge from "./MswBadge.vue";
+import MswButton from "./MswButton.vue";
 import {
   applyPreset,
   customPresets,
@@ -234,6 +241,16 @@ const deleteCustomPreset = (name: string) => {
   flex-direction: column;
   gap: 0.35rem;
   flex-shrink: 0;
+}
+
+.presets-list-item.msw-button {
+  display: flex;
+  width: 100%;
+  gap: 0.35rem;
+  padding: 0.85rem 0.9rem;
+  justify-content: flex-start;
+  align-items: stretch;
+  text-align: left;
 }
 
 .presets-list-item:hover {
@@ -420,7 +437,7 @@ const deleteCustomPreset = (name: string) => {
   word-break: break-all;
 }
 
-.apply-preset-button {
+.apply-preset-button.msw-button {
   background-color: var(--accent-color);
   color: white;
   padding: 0.5rem 1rem;
@@ -433,16 +450,16 @@ const deleteCustomPreset = (name: string) => {
   white-space: nowrap;
 }
 
-.apply-preset-button:hover {
+.apply-preset-button.msw-button:hover {
   background-color: var(--accent-hover);
 }
 
-.apply-preset-button.compact {
+.apply-preset-button.msw-button.compact {
   padding: 0.4rem 0.75rem;
   font-size: 0.8125rem;
 }
 
-.delete-preset-button {
+.delete-preset-button.msw-button {
   background: none;
   border: none;
   color: var(--text-tertiary);
@@ -455,12 +472,12 @@ const deleteCustomPreset = (name: string) => {
   transition: all 0.2s;
 }
 
-.delete-preset-button:hover {
+.delete-preset-button.msw-button:hover {
   background-color: #fee2e2;
   color: #ef4444;
 }
 
-.theme-dark .delete-preset-button:hover {
+.theme-dark .delete-preset-button.msw-button:hover {
   background-color: #450a0a;
 }
 
@@ -476,23 +493,6 @@ const deleteCustomPreset = (name: string) => {
   justify-content: center;
 }
 
-.method-badge {
-  font-size: 0.75rem;
-  font-weight: 800;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  text-transform: uppercase;
-  display: inline-block;
-}
-
-.method-badge.mini {
-  font-size: 0.6rem;
-  padding: 0.1rem 0.3rem;
-  border-radius: 3px;
-  min-width: 32px;
-  flex-shrink: 0;
-}
-
 .empty-state {
   text-align: center;
   padding: 4rem 1rem;
@@ -505,56 +505,5 @@ const deleteCustomPreset = (name: string) => {
 }
 .w-4 {
   width: 1rem;
-}
-
-/* Method badge themes (inherited from parent or defined here) */
-:deep(.theme-light) .method-badge.get,
-.method-badge.get {
-  background-color: #dcfce7;
-  color: #166534;
-}
-:deep(.theme-dark) .method-badge.get {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-}
-
-:deep(.theme-light) .method-badge.post,
-.method-badge.post {
-  background-color: #fef9c3;
-  color: #854d0e;
-}
-:deep(.theme-dark) .method-badge.post {
-  background-color: rgba(234, 179, 8, 0.2);
-  color: #facc15;
-}
-
-:deep(.theme-light) .method-badge.put,
-.method-badge.put {
-  background-color: #dbeafe;
-  color: #1e40af;
-}
-:deep(.theme-dark) .method-badge.put {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-}
-
-:deep(.theme-light) .method-badge.patch,
-.method-badge.patch {
-  background-color: #f3e8ff;
-  color: #6b21a8;
-}
-:deep(.theme-dark) .method-badge.patch {
-  background-color: rgba(168, 85, 247, 0.2);
-  color: #c084fc;
-}
-
-:deep(.theme-light) .method-badge.delete,
-.method-badge.delete {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-:deep(.theme-dark) .method-badge.delete {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #f87171;
 }
 </style>

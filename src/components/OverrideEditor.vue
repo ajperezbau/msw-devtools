@@ -3,9 +3,15 @@
     <div class="override-editor-content">
       <div class="editor-header">
         <h3>Override Response: {{ editingKey }}</h3>
-        <button type="button" @click="$emit('close')" class="close-button">
+        <MswButton
+          type="button"
+          variant="icon"
+          size="sm"
+          @click="$emit('close')"
+          class="close-button"
+        >
           &times;
-        </button>
+        </MswButton>
       </div>
       <div class="editor-body">
         <div class="input-group">
@@ -32,13 +38,15 @@
         <div class="input-group">
           <div class="label-with-action">
             <label>Response Body (JSON or Text)</label>
-            <button
+            <MswButton
               type="button"
+              variant="ghost"
+              size="sm"
               @click="formatEditorJson"
               class="format-button"
             >
               Format JSON
-            </button>
+            </MswButton>
           </div>
           <textarea
             v-model="overrideForm.body"
@@ -48,20 +56,35 @@
         </div>
       </div>
       <div class="editor-footer">
-        <button type="button" @click="clearOverride" class="secondary-button">
+        <MswButton
+          type="button"
+          variant="secondary"
+          size="sm"
+          @click="clearOverride"
+        >
           Clear Current Override
-        </button>
+        </MswButton>
         <div class="spacer"></div>
-        <button type="button" @click="$emit('close')" class="secondary-button">
+        <MswButton
+          type="button"
+          variant="secondary"
+          size="sm"
+          @click="$emit('close')"
+        >
           Cancel
-        </button>
-        <button type="button" @click="saveOverride" class="primary-button">
+        </MswButton>
+        <MswButton
+          type="button"
+          variant="primary"
+          size="sm"
+          @click="saveOverride"
+        >
           {{
             overrideForm.scenarioName
               ? "Save as Scenario"
               : "Save & Enable Override"
           }}
-        </button>
+        </MswButton>
       </div>
     </div>
   </div>
@@ -69,6 +92,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
+import MswButton from "./MswButton.vue";
 import {
   customOverrides,
   customScenarios,
@@ -316,52 +340,5 @@ const clearOverride = () => {
 
 .spacer {
   flex: 1;
-}
-
-.primary-button {
-  background-color: var(--accent-color);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.primary-button:hover {
-  background-color: var(--accent-hover);
-}
-
-.secondary-button {
-  background-color: var(--bg-main);
-  color: var(--text-main);
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--border-color);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.secondary-button:hover {
-  background-color: var(--bg-tertiary);
-}
-
-.close-button {
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  font-size: 1.5rem;
-  line-height: 1;
-}
-
-.close-button:hover {
-  background-color: var(--bg-tertiary);
-  color: var(--text-main);
 }
 </style>
