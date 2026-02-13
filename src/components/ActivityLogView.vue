@@ -435,12 +435,12 @@ const filteredActivityLog = computed(() => {
 }
 
 .method-toggle-btn.msw-button {
-  padding: 0.25rem 0.5rem;
+  padding: 0.35rem 0.65rem;
   border-radius: 0.375rem;
   border: 1px solid var(--border-color);
-  background: var(--bg-main);
+  background: var(--bg-secondary);
   color: var(--text-tertiary);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
@@ -457,64 +457,34 @@ const filteredActivityLog = computed(() => {
   border-color: var(--accent-color);
 }
 
-.theme-light .method-toggle-btn.msw-button.active.get {
-  background-color: #dcfce7;
-  color: #166534;
-  border-color: #dcfce7;
+.method-toggle-btn.msw-button.active.get {
+  background-color: var(--method-get-bg);
+  color: var(--method-get-text);
+  border-color: var(--method-get-border);
 }
 
-.theme-light .method-toggle-btn.msw-button.active.post {
-  background-color: #fef9c3;
-  color: #854d0e;
-  border-color: #fef9c3;
+.method-toggle-btn.msw-button.active.post {
+  background-color: var(--method-post-bg);
+  color: var(--method-post-text);
+  border-color: var(--method-post-border);
 }
 
-.theme-light .method-toggle-btn.msw-button.active.put {
-  background-color: #dbeafe;
-  color: #1e40af;
-  border-color: #dbeafe;
+.method-toggle-btn.msw-button.active.put {
+  background-color: var(--method-put-bg);
+  color: var(--method-put-text);
+  border-color: var(--method-put-border);
 }
 
-.theme-light .method-toggle-btn.msw-button.active.patch {
-  background-color: #f3e8ff;
-  color: #6b21a8;
-  border-color: #f3e8ff;
+.method-toggle-btn.msw-button.active.patch {
+  background-color: var(--method-patch-bg);
+  color: var(--method-patch-text);
+  border-color: var(--method-patch-border);
 }
 
-.theme-light .method-toggle-btn.msw-button.active.delete {
-  background-color: #fee2e2;
-  color: #991b1b;
-  border-color: #fee2e2;
-}
-
-.theme-dark .method-toggle-btn.msw-button.active.get {
-  background-color: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
-  border-color: rgba(34, 197, 94, 0.4);
-}
-
-.theme-dark .method-toggle-btn.msw-button.active.post {
-  background-color: rgba(234, 179, 8, 0.2);
-  color: #facc15;
-  border-color: rgba(234, 179, 8, 0.4);
-}
-
-.theme-dark .method-toggle-btn.msw-button.active.put {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-  border-color: rgba(59, 130, 246, 0.4);
-}
-
-.theme-dark .method-toggle-btn.msw-button.active.patch {
-  background-color: rgba(168, 85, 247, 0.2);
-  color: #c084fc;
-  border-color: rgba(168, 85, 247, 0.4);
-}
-
-.theme-dark .method-toggle-btn.msw-button.active.delete {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.4);
+.method-toggle-btn.msw-button.active.delete {
+  background-color: var(--method-delete-bg);
+  color: var(--method-delete-text);
+  border-color: var(--method-delete-border);
 }
 
 .clear-log-button.msw-button {

@@ -586,11 +586,26 @@ watch(showOnlyModified, (newValue) => {
   background: transparent;
   border: none;
   color: white;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
+  text-decoration: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.9;
+}
+
+.text-button.msw-button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  opacity: 1;
+}
+
+.text-button.msw-button:active {
+  background: rgba(255, 255, 255, 0.3) !important;
 }
 
 .selection-actions {
@@ -600,17 +615,24 @@ watch(showOnlyModified, (newValue) => {
 }
 
 .toolbar-input.msw-input {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 6px;
   padding: 0.4rem 0.75rem;
-  color: white;
-  font-size: 0.875rem;
+  color: white !important;
+  font-size: 0.8125rem;
   outline: none;
+  width: 180px;
+  transition: all 0.2s;
+}
+
+.toolbar-input.msw-input:focus {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
 .toolbar-input.msw-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 .toolbar-save-button.msw-button {
@@ -618,15 +640,26 @@ watch(showOnlyModified, (newValue) => {
   color: var(--accent-color);
   border: none;
   padding: 0.4rem 1rem;
-  border-radius: 4px;
-  font-weight: 600;
+  border-radius: 6px;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  transition: all 0.2s;
+}
+
+.toolbar-save-button.msw-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.toolbar-save-button.msw-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .toolbar-save-button.msw-button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .registry-container {

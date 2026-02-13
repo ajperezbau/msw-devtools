@@ -621,6 +621,21 @@ watch(isOpen, (newValue) => {
   --table-hover: #fafafa;
   --table-header-bg: #fafafa;
   --modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --method-get-bg: #dcfce7;
+  --method-get-text: #166534;
+  --method-get-border: #bbf7d0;
+  --method-post-bg: #fef9c3;
+  --method-post-text: #854d0e;
+  --method-post-border: #fef08a;
+  --method-put-bg: #dbeafe;
+  --method-put-text: #1e40af;
+  --method-put-border: #bfdbfe;
+  --method-patch-bg: #f3e8ff;
+  --method-patch-text: #6b21a8;
+  --method-patch-border: #e9d5ff;
+  --method-delete-bg: #fee2e2;
+  --method-delete-text: #991b1b;
+  --method-delete-border: #fecaca;
 }
 
 .modal-content.theme-dark {
@@ -638,6 +653,21 @@ watch(isOpen, (newValue) => {
   --table-hover: #27272a;
   --table-header-bg: #18181b;
   --modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --method-get-bg: rgba(34, 197, 94, 0.2);
+  --method-get-text: #4ade80;
+  --method-get-border: rgba(34, 197, 94, 0.4);
+  --method-post-bg: rgba(234, 179, 8, 0.2);
+  --method-post-text: #facc15;
+  --method-post-border: rgba(234, 179, 8, 0.4);
+  --method-put-bg: rgba(59, 130, 246, 0.2);
+  --method-put-text: #60a5fa;
+  --method-put-border: rgba(59, 130, 246, 0.4);
+  --method-patch-bg: rgba(168, 85, 247, 0.2);
+  --method-patch-text: #c084fc;
+  --method-patch-border: rgba(168, 85, 247, 0.4);
+  --method-delete-bg: rgba(239, 68, 68, 0.2);
+  --method-delete-text: #f87171;
+  --method-delete-border: rgba(239, 68, 68, 0.4);
 }
 
 .h-6 {
@@ -729,7 +759,7 @@ watch(isOpen, (newValue) => {
   padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
-  background-color: var(--bg-main);
+  background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
 }
 
