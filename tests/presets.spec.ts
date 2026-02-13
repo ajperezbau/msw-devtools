@@ -23,7 +23,9 @@ test.describe("MSW DevTools - Presets (Recipes)", () => {
 
     // Verify it appeared in the list
     await devToolsPage.switchTab("Presets");
-    const listItem = page.locator(".presets-list-item", { hasText: presetName });
+    const listItem = page.locator(".presets-list-item", {
+      hasText: presetName,
+    });
     await expect(listItem).toBeVisible();
     await listItem.click();
 
@@ -52,7 +54,9 @@ test.describe("MSW DevTools - Presets (Recipes)", () => {
     await devToolsPage.saveCurrentAsPreset(presetName);
 
     await devToolsPage.switchTab("Presets");
-    const listItem = page.locator(".presets-list-item", { hasText: presetName });
+    const listItem = page.locator(".presets-list-item", {
+      hasText: presetName,
+    });
     await expect(listItem).toBeVisible();
     await listItem.click();
 
@@ -157,7 +161,8 @@ test.describe("MSW DevTools - Presets (Recipes)", () => {
     const previewTag = detail.locator(".preview-tag").first();
     await expect(previewTag).toBeVisible();
 
-    const methodBadge = previewTag.locator(".method-badge");
+    // Use an accessible selector: method badges expose role="status" and an accessible name
+    const methodBadge = previewTag.getByRole("status");
     await expect(methodBadge).toBeVisible();
 
     // It should contain a valid method like GET or POST

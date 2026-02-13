@@ -28,12 +28,25 @@ const badgeClass = computed(() => [
   `variant-${props.variant}`,
   `size-${props.size}`,
   methodClass.value,
+  props.variant === "method" ? "method-badge" : null,
   isErrorStatus.value ? "is-error" : null,
 ]);
+
+const badgeAttrs = computed(() => {
+  const attrs: Record<string, string> = {};
+  if (props.variant === "method") {
+    attrs.role = "status";
+    attrs["aria-label"] = String(props.label);
+  }
+  if (props.variant === "status") {
+    attrs["aria-label"] = String(props.label);
+  }
+  return attrs;
+});
 </script>
 
 <template>
-  <span :class="badgeClass">{{ label }}</span>
+  <span :class="badgeClass" v-bind="badgeAttrs">{{ label }}</span>
 </template>
 
 <style scoped>
