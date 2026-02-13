@@ -47,6 +47,40 @@
           Requests ({{ filteredActivityLog.length }})
         </div>
       </div>
+      
+      <div class="sidebar-search">
+        <MswInput
+          v-model="searchQuery"
+          placeholder="Filter requests..."
+          variant="inline"
+          size="sm"
+          class="search-input"
+        />
+        <MswButton
+          v-if="searchQuery"
+          type="button"
+          variant="icon"
+          size="sm"
+          @click="searchQuery = ''"
+          class="clear-search-btn"
+          title="Clear search"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-3 w-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </MswButton>
+      </div>
 
       <div v-if="filterKey" class="filter-banner">
         <span>Filter: <strong>{{ filterKey }}</strong></span>
@@ -210,6 +244,7 @@
 import { computed, ref, watch } from "vue";
 import MswBadge from "./MswBadge.vue";
 import MswButton from "./MswButton.vue";
+import MswInput from "./MswInput.vue";
 import {
   activityLog,
   clearActivityLog,
@@ -276,13 +311,23 @@ const toggleMethod = (method: string) => {
   }
 };
 
+const searchQuery = ref("");
+
 const filteredActivityLog = computed(() => {
+  const query = searchQuery.value.toLowerCase();
   return activityLog.filter((entry) => {
     const matchesKey = !props.filterKey || entry.key === props.filterKey;
     const matchesMethod =
       selectedMethods.value.has("ALL") ||
       selectedMethods.value.has(entry.method);
-    return matchesKey && matchesMethod;
+    
+    // Search by URL, Key (displayed), or Method
+    const matchesQuery = !query || 
+        entry.url.toLowerCase().includes(query) || 
+        displayKey(entry.key).toLowerCase().includes(query) ||
+        entry.method.toLowerCase().includes(query);
+
+    return matchesKey && matchesMethod && matchesQuery;
   });
 });
 
@@ -346,6 +391,54 @@ const copyToClipboard = async (data: unknown) => {
   padding: 0.75rem;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-secondary);
+}
+
+.sidebar-search {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input.msw-input {
+  width: 100%;
+  border-color: var(--border-color);
+  background: var(--input-bg);
+  padding: 0.25rem 0.5rem;
+  padding-right: 1.5rem;
+}
+
+.search-input.msw-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.clear-search-btn.msw-button {
+  position: absolute;
+  right: 1.25rem;
+  padding: 0.1rem;
+  background: rgba(0,0,0,0.1);
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+}
+.theme-dark .clear-search-btn.msw-button {
+    background: rgba(255,255,255,0.1);
+}
+
+.clear-search-btn.msw-button:hover {
+    color: var(--text-main);
+    background: rgba(0,0,0,0.2);
+}
+.theme-dark .clear-search-btn.msw-button:hover {
+    background: rgba(255,255,255,0.2);
 }
 
 .sidebar-toolbar {
@@ -514,6 +607,8 @@ const copyToClipboard = async (data: unknown) => {
     font-size: 0.65rem;
 }
 
+.h-3 { height: 0.75rem; }
+.w-3 { width: 0.75rem; }
 .h-4 { height: 1rem; }
 .w-4 { width: 1rem; }
 
