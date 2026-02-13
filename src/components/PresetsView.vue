@@ -11,7 +11,6 @@
           :key="preset.key"
           type="button"
           variant="ghost"
-          size="md"
           class="presets-list-item"
           :class="{ active: preset.key === selectedPresetName }"
           :aria-pressed="preset.key === selectedPresetName"

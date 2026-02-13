@@ -99,7 +99,6 @@
       />
       <MswButton
         type="button"
-        variant="secondary"
         size="sm"
         @click="saveCurrentAsPreset"
         :disabled="!newPresetName || selectedKeys.size === 0"

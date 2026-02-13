@@ -18,14 +18,7 @@
           {{ method }}
         </MswButton>
       </div>
-      <MswButton
-        type="button"
-        variant="secondary"
-        size="sm"
-        @click="clearActivityLog"
-        class="clear-log-button"
-        title="Clear logs"
-      >
+      <MswButton type="button" @click="clearActivityLog" title="Clear logs">
         Clear
       </MswButton>
     </div>
@@ -37,7 +30,6 @@
       <MswButton
         type="button"
         variant="ghost"
-        size="sm"
         @click="emit('update:filterKey', null)"
         class="clear-filter-button"
       >
@@ -435,12 +427,10 @@ const filteredActivityLog = computed(() => {
 }
 
 .method-toggle-btn.msw-button {
-  padding: 0.35rem 0.65rem;
   border-radius: 0.375rem;
   border: 1px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-tertiary);
-  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
@@ -455,6 +445,12 @@ const filteredActivityLog = computed(() => {
   background: var(--accent-color);
   color: white;
   border-color: var(--accent-color);
+}
+
+.method-toggle-btn.msw-button.active.all {
+  background-color: var(--method-all-bg);
+  color: var(--method-all-text);
+  border-color: var(--method-all-border);
 }
 
 .method-toggle-btn.msw-button.active.get {
@@ -485,22 +481,6 @@ const filteredActivityLog = computed(() => {
   background-color: var(--method-delete-bg);
   color: var(--method-delete-text);
   border-color: var(--method-delete-border);
-}
-
-.clear-log-button.msw-button {
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.375rem;
-  border: 1px solid var(--border-color);
-  background: var(--bg-main);
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.clear-log-button.msw-button:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-main);
 }
 
 .log-filter-banner {

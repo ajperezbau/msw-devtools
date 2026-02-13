@@ -6,7 +6,6 @@
         <MswButton
           type="button"
           variant="icon"
-          size="sm"
           @click="$emit('close')"
           class="close-button"
         >
@@ -56,29 +55,12 @@
         </div>
       </div>
       <div class="editor-footer">
-        <MswButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          @click="clearOverride"
-        >
+        <MswButton type="button" @click="clearOverride">
           Clear Current Override
         </MswButton>
         <div class="spacer"></div>
-        <MswButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          @click="$emit('close')"
-        >
-          Cancel
-        </MswButton>
-        <MswButton
-          type="button"
-          variant="primary"
-          size="sm"
-          @click="saveOverride"
-        >
+        <MswButton type="button" @click="$emit('close')"> Cancel </MswButton>
+        <MswButton type="button" variant="primary" @click="saveOverride">
           {{
             overrideForm.scenarioName
               ? "Save as Scenario"

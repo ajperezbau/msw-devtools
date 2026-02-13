@@ -47,7 +47,6 @@
           <MswButton
             type="button"
             variant="icon"
-            size="sm"
             @click="toggleTheme"
             class="theme-toggle-button"
             :title="
@@ -93,7 +92,6 @@
             <MswButton
               type="button"
               variant="icon"
-              size="sm"
               @click="showExportDialog = true"
               class="export-button"
               title="Export scenarios to JSON"
@@ -117,7 +115,6 @@
             <MswButton
               type="button"
               variant="icon"
-              size="sm"
               @click="triggerImport"
               class="import-button"
               title="Import scenarios from JSON"
@@ -142,7 +139,6 @@
               v-if="activeTab === 'registry'"
               type="button"
               variant="icon"
-              size="sm"
               @click="registryViewRef?.toggleSelectionMode()"
               class="import-button"
               :class="{ active: registryViewRef?.isSelectionMode }"
@@ -168,10 +164,7 @@
           <MswButton
             v-if="activeTab === 'log'"
             type="button"
-            variant="secondary"
-            size="sm"
             @click="clearActivityLog"
-            class="clear-button"
             title="Clear log"
           >
             Clear Log
@@ -186,8 +179,6 @@
           <div class="reset-menu-container" ref="resetMenuContainer">
             <MswButton
               type="button"
-              variant="secondary"
-              size="sm"
               @click="showResetMenu = !showResetMenu"
               class="reset-button"
               :class="{ 'menu-open': showResetMenu }"
@@ -214,7 +205,6 @@
               <MswButton
                 type="button"
                 variant="ghost"
-                size="sm"
                 @click="resetScenariosOnly"
               >
                 Reset Scenarios Only
@@ -222,7 +212,6 @@
               <MswButton
                 type="button"
                 variant="ghost"
-                size="sm"
                 @click="clearConfigs"
                 class="danger"
               >
@@ -233,7 +222,6 @@
           <MswButton
             type="button"
             variant="primary"
-            size="sm"
             @click="reloadPage"
             class="reload-button"
             title="Apply & Reload (Ctrl + Enter)"
@@ -243,7 +231,6 @@
           <MswButton
             type="button"
             variant="icon"
-            size="sm"
             @click="isOpen = false"
             class="close-button"
             title="Close"
@@ -621,6 +608,9 @@ watch(isOpen, (newValue) => {
   --table-hover: #fafafa;
   --table-header-bg: #fafafa;
   --modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  --method-all-bg: #ffedd5;
+  --method-all-text: #9a3412;
+  --method-all-border: #fed7aa;
   --method-get-bg: #dcfce7;
   --method-get-text: #166534;
   --method-get-border: #bbf7d0;
@@ -653,6 +643,9 @@ watch(isOpen, (newValue) => {
   --table-hover: #27272a;
   --table-header-bg: #18181b;
   --modal-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --method-all-bg: rgba(255, 106, 51, 0.15);
+  --method-all-text: #ff6a33;
+  --method-all-border: rgba(255, 106, 51, 0.4);
   --method-get-bg: rgba(34, 197, 94, 0.2);
   --method-get-text: #4ade80;
   --method-get-border: rgba(34, 197, 94, 0.4);

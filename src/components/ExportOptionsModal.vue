@@ -139,12 +139,7 @@ const updateOption = (key: ExportOptionKey, value: boolean) => {
       </div>
 
       <div class="export-footer">
-        <MswButton
-          type="button"
-          variant="secondary"
-          size="sm"
-          @click="emit('close')"
-        >
+        <MswButton type="button" size="sm" @click="emit('close')">
           Cancel
         </MswButton>
         <div class="spacer"></div>
