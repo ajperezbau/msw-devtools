@@ -16,3 +16,7 @@
 
 - **Export/Import Consistency:** When adding new persistent configuration or state (like Presets, Scenarios, or Overrides), always ensure it is included in the Export and Import processes in `mswDevtools.vue`.
 - **Persistence Visibility:** Ensure that any user-created content (Custom Scenarios, Presets) is correctly reactive and persisted to `localStorage` via the handlers in `mswRegistry.ts`.
+
+## Architecture Alignment
+
+- **Architecture First:** Always follow the rules and constraints documented in `ARCHITECTURE.md`.

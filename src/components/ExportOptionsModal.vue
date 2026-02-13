@@ -2,8 +2,17 @@
 import { computed } from "vue";
 import MswButton from "./MswButton.vue";
 import MswCheckbox from "./MswCheckbox.vue";
+import type { ExportOptions } from "../types";
 
-type ExportOptions = Record<string, boolean>;
+const exportOptionKeys = [
+  "scenarios",
+  "delays",
+  "overrides",
+  "customScenarios",
+  "customPresets",
+  "globalDelay",
+] as const;
+type ExportOptionKey = (typeof exportOptionKeys)[number];
 
 const props = defineProps<{
   options: ExportOptions;
@@ -18,8 +27,8 @@ const emit = defineEmits<{
 const allOptionsSelected = computed({
   get: () => Object.values(props.options).every((value) => value),
   set: (value: boolean) => {
-    const nextOptions: ExportOptions = {};
-    Object.keys(props.options).forEach((key) => {
+    const nextOptions = { ...props.options } as ExportOptions;
+    exportOptionKeys.forEach((key) => {
       nextOptions[key] = value;
     });
     emit("update:options", nextOptions);
@@ -30,7 +39,7 @@ const isExportDisabled = computed(() =>
   Object.values(props.options).every((value) => !value),
 );
 
-const updateOption = (key: keyof ExportOptions, value: boolean) => {
+const updateOption = (key: ExportOptionKey, value: boolean) => {
   emit("update:options", {
     ...props.options,
     [key]: value,

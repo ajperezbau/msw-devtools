@@ -301,7 +301,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import MswButton from "./components/MswButton.vue";
 import MswToggle from "./components/MswToggle.vue";
 import RegistryView from "./components/RegistryView.vue";
@@ -320,7 +320,7 @@ import {
   scenarioRegistry,
   scenarioState,
 } from "./mswRegistry";
-import type { LogEntry } from "./types";
+import type { ExportOptions, LogEntry } from "./types";
 
 const isOpen = ref(false);
 const activeTab = ref<"registry" | "log" | "presets">("registry");
@@ -332,7 +332,7 @@ const theme = ref<"light" | "dark">(
 );
 
 const showExportDialog = ref(false);
-const exportOptions = ref({
+const exportOptions = ref<ExportOptions>({
   scenarios: true,
   delays: true,
   overrides: true,

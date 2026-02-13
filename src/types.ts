@@ -73,3 +73,15 @@ export interface MswDevtoolsOptions {
   baseHandlers?: any[];
   urlResolver?: (url: string) => string;
 }
+
+/**
+ * Export options for scenario configuration.
+ */
+export interface ExportOptions {
+  scenarios: boolean;
+  delays: boolean;
+  overrides: boolean;
+  customScenarios: boolean;
+  customPresets: boolean;
+  globalDelay: boolean;
+}
