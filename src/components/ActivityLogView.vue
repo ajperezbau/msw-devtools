@@ -49,37 +49,37 @@
       </div>
       
       <div class="sidebar-search">
-        <MswInput
-          v-model="searchQuery"
-          placeholder="Filter requests..."
-          variant="inline"
-          size="sm"
-          class="search-input"
-        />
-        <MswButton
-          v-if="searchQuery"
-          type="button"
-          variant="icon"
-          size="sm"
-          @click="searchQuery = ''"
-          class="clear-search-btn"
-          title="Clear search"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-3 w-3"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        <div class="search-wrapper">
+          <MswInput
+            v-model="searchQuery"
+            placeholder="Filter requests..."
+            class="search-input"
+          />
+          <MswButton
+            v-if="searchQuery"
+            type="button"
+            variant="icon"
+            size="sm"
+            @click="searchQuery = ''"
+            class="clear-search-button"
+            title="Clear search"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </MswButton>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </MswButton>
+        </div>
       </div>
 
       <div v-if="filterKey" class="filter-banner">
@@ -218,20 +218,25 @@
 
           <!-- Request Tab -->
           <div v-if="activeTab === 'request'" class="tab-pane">
-            <div class="pane-actions" v-if="selectedLog.requestBody">
-               <button class="action-btn" @click="copyToClipboard(selectedLog.requestBody)">Copy JSON</button>
-            </div>
-            <pre v-if="selectedLog.requestBody" class="code-block">{{ formatBody(selectedLog.requestBody) }}</pre>
+            <CodeBlock 
+              v-if="selectedLog.requestBody" 
+              :code="selectedLog.requestBody" 
+              language="json"
+            />
             <div v-else class="empty-pane">No request body</div>
           </div>
 
           <!-- Response Tab -->
           <div v-if="activeTab === 'response'" class="tab-pane">
-             <div class="pane-actions" v-if="selectedLog.responseBody">
-               <button class="action-btn" @click="copyToClipboard(selectedLog.responseBody)">Copy JSON</button>
-               <button class="action-btn" @click="emit('open-override', selectedLog)">Use as Override</button>
-            </div>
-            <pre v-if="selectedLog.responseBody" class="code-block">{{ formatBody(selectedLog.responseBody) }}</pre>
+            <CodeBlock 
+              v-if="selectedLog.responseBody" 
+              :code="selectedLog.responseBody" 
+              language="json"
+            >
+              <template #header>
+                 <button class="action-btn override-btn" @click="emit('open-override', selectedLog)">Use as Override</button>
+              </template>
+            </CodeBlock>
             <div v-else class="empty-pane">No response body</div>
           </div>
         </div>
@@ -245,6 +250,7 @@ import { computed, ref, watch } from "vue";
 import MswBadge from "./MswBadge.vue";
 import MswButton from "./MswButton.vue";
 import MswInput from "./MswInput.vue";
+import CodeBlock from "./CodeBlock.vue";
 import {
   activityLog,
   clearActivityLog,
@@ -337,11 +343,7 @@ watch(filteredActivityLog, (newLogs) => {
     }
 });
 
-const formatBody = (body: unknown) => {
-  if (body === undefined || body === null) return "";
-  if (typeof body === "string") return body;
-  return JSON.stringify(body, null, 2);
-};
+
 
 const formatTime = (timestamp: number) => {
   return new Date(timestamp).toLocaleTimeString(undefined, {
@@ -357,13 +359,6 @@ const formatFullTime = (timestamp: number) => {
     const time = d.toLocaleTimeString(undefined, { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const ms = String(d.getMilliseconds()).padStart(3, '0');
     return `${time}.${ms}`;
-};
-
-const copyToClipboard = async (data: unknown) => {
-  try {
-    const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
-    await navigator.clipboard.writeText(text);
-  } catch { /* silent */ }
 };
 </script>
 
@@ -394,51 +389,44 @@ const copyToClipboard = async (data: unknown) => {
 }
 
 .sidebar-search {
-  padding: 0.5rem 0.75rem;
+  padding: 1rem 0.75rem;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-secondary);
+}
+
+.search-wrapper {
   position: relative;
+  width: 100%;
   display: flex;
   align-items: center;
 }
 
 .search-input.msw-input {
   width: 100%;
-  border-color: var(--border-color);
-  background: var(--input-bg);
-  padding: 0.25rem 0.5rem;
-  padding-right: 1.5rem;
+  padding-right: 2.5rem;
+  font-size: 0.875rem;
 }
 
-.search-input.msw-input:focus {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 1px var(--accent-color);
-}
-
-.clear-search-btn.msw-button {
+.clear-search-button.msw-button {
   position: absolute;
-  right: 1.25rem;
-  padding: 0.1rem;
-  background: rgba(0,0,0,0.1);
-  border-radius: 50%;
+  right: 0.5rem;
+  background: none;
+  border: none;
   color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: none;
-}
-.theme-dark .clear-search-btn.msw-button {
-    background: rgba(255,255,255,0.1);
+  transition: all 0.2s;
+  width: auto;
+  height: auto;
 }
 
-.clear-search-btn.msw-button:hover {
-    color: var(--text-main);
-    background: rgba(0,0,0,0.2);
-}
-.theme-dark .clear-search-btn.msw-button:hover {
-    background: rgba(255,255,255,0.2);
+.clear-search-button.msw-button:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-main);
 }
 
 .sidebar-toolbar {
@@ -819,17 +807,7 @@ const copyToClipboard = async (data: unknown) => {
     font-weight: 600;
 }
 
-.code-block {
-    background: var(--bg-secondary);
-    padding: 1.5rem;
-    border-radius: 8px;
-    overflow-x: auto;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 0.8rem;
-    margin: 0;
-    border: 1px solid var(--border-color);
-    line-height: 1.5;
-}
+
 
 .pane-actions {
     margin-bottom: 1rem;
@@ -847,6 +825,12 @@ const copyToClipboard = async (data: unknown) => {
     cursor: pointer;
     font-weight: 600;
     transition: all 0.2s;
+}
+.override-btn {
+    margin-left: auto;
+    margin-right: 0.5rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.7rem;
 }
 .action-btn:hover {
     background: var(--bg-tertiary);
