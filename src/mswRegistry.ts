@@ -192,7 +192,7 @@ const registerInternal = (config: {
 
   const factory = (resolver: (url: string) => string) =>
     http[method](resolver(url), async (info: any) => {
-      const { request } = info;
+      const { request, params } = info;
 
       // Capture request body (cloning to avoid consuming the stream)
       let requestBody: unknown;
@@ -319,6 +319,7 @@ const registerInternal = (config: {
           responseBody,
           headers,
           queryParams,
+          pathParams: params as Record<string, string>,
         });
 
         if (activityLog.length > 100) {

@@ -39,6 +39,7 @@ export interface LogEntry {
   requestBody?: unknown;
   headers?: Record<string, string>;
   queryParams?: Record<string, string>;
+  pathParams?: Record<string, string>;
 }
 
 /**
