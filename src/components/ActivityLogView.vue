@@ -982,12 +982,12 @@ const formatFullTime = (timestamp: number) => {
 .params-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem; /* Espacio generoso entre columnas */
+  gap: 2rem; /* Generous spacing between columns */
   margin-bottom: 2.5rem;
-  align-items: start; /* Para que las tablas no se estiren si tienen diferente altura */
+  align-items: start; /* Prevents tables from stretching if they have different heights */
 }
 
-/* Ajuste para móviles o cuando el espacio es reducido */
+/* Adjustment for mobile or when space is limited */
 @media (max-width: 768px) {
   .params-grid {
     grid-template-columns: 1fr;
@@ -995,7 +995,7 @@ const formatFullTime = (timestamp: number) => {
   }
 }
 
-/* Asegurar que los hijos directos del grid (las secciones .details-section) no tengan margen inferior extra dentro del grid */
+/* Ensure that direct children of the grid (.details-section sections) do not have extra bottom margin inside the grid */
 .params-grid .details-section {
   margin-bottom: 0;
 }
