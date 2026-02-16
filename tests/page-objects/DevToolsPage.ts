@@ -193,8 +193,9 @@ export class DevToolsPage {
   }
 
   // Activity Log methods
-  async getLogEntry(url: string) {
-    return this.dialog.getByRole("listitem").filter({ hasText: url }).first();
+  async getLogEntry(key: string) {
+    // In the new design, list items contain the handler key
+    return this.dialog.getByRole("listitem").filter({ hasText: key }).first();
   }
 
   async expectLogEntry(details: {
@@ -204,23 +205,23 @@ export class DevToolsPage {
     scenario: string;
     status: number;
   }) {
-    const entry = await this.getLogEntry(details.url);
+    const entry = await this.getLogEntry(details.key);
     await expect(entry).toBeVisible();
-    await expect(
-      entry.getByText(details.method, { exact: true }),
-    ).toBeVisible();
+    // Method is shown in a badge
+    await expect(entry.getByText(details.method)).toBeVisible();
+    // Key is displayed
     await expect(entry.getByText(details.key, { exact: true })).toBeVisible();
+    // Scenario is shown in the bottom row
     await expect(entry.getByText(details.scenario)).toBeVisible();
+    // Status code is shown
     await expect(
       entry.getByText(details.status.toString(), { exact: true }),
     ).toBeVisible();
   }
 
-  async expandLogEntry(url: string) {
-    const entry = await this.getLogEntry(url);
-    // There isn't a single button for header, it's a div with click handler.
-    // We can click the URL text or the entry itself.
-    await entry.getByText(url).click();
+  async selectLogEntry(key: string) {
+    const entry = await this.getLogEntry(key);
+    await entry.click();
   }
 
   async expectLogRequestPreview(url: string, previewText: string) {
@@ -236,6 +237,102 @@ export class DevToolsPage {
     const entry = await this.getLogEntry(url);
     const sectionLocator = entry.getByRole("region", { name: section });
     await expect(sectionLocator).toContainText(content);
+  }
+
+  // New methods for redesigned Activity Log
+  async expectPlaceholderVisible() {
+    await expect(
+      this.dialog.getByText("Select a request to view details"),
+    ).toBeVisible();
+  }
+
+  async clickMethodFilter(method: "ALL" | "GET" | "POST" | "PUT" | "DELETE") {
+    await this.dialog.getByRole("button", { name: method, exact: true }).click();
+  }
+
+  async searchActivityLog(query: string) {
+    const searchInput = this.dialog.getByPlaceholder("Filter requests...");
+    await searchInput.fill(query);
+  }
+
+  async clearActivityLogSearch() {
+    const clearButton = this.dialog.getByTitle("Clear search");
+    await clearButton.click();
+  }
+
+  async clearActivityLog() {
+    await this.dialog.getByTitle("Clear logs").click();
+  }
+
+  async expectNoRequestsFound() {
+    await expect(this.dialog.getByText("No requests found")).toBeVisible();
+  }
+
+  async expectRequestCount(count: number) {
+    await expect(
+      this.dialog.getByText(`Requests (${count})`),
+    ).toBeVisible();
+  }
+
+  async switchToTab(
+    tab: "General" | "Request" | "Response",
+  ) {
+    await this.dialog
+      .getByRole("button", { name: tab, exact: false })
+      .click();
+  }
+
+  async expectTabContentVisible(heading: string) {
+    await expect(this.dialog.getByText(heading)).toBeVisible();
+  }
+
+  async expectGeneralTabInfo(details: {
+    timestamp?: boolean;
+    source?: string;
+    handlerKey?: string;
+  }) {
+    if (details.timestamp) {
+      await expect(this.dialog.getByText("Timestamp")).toBeVisible();
+    }
+    if (details.source) {
+      await expect(this.dialog.getByText("Source")).toBeVisible();
+      // Use locator for source badge to avoid multiple matches
+      await expect(this.dialog.locator(".source-badge")).toContainText(details.source);
+    }
+    if (details.handlerKey) {
+      await expect(this.dialog.getByText("Handler Key")).toBeVisible();
+      // Use locator for code value to avoid multiple matches
+      await expect(this.dialog.locator(".info-value.code")).toContainText(details.handlerKey);
+    }
+  }
+
+  async expectRequestTabInfo(details: {
+    headers?: boolean;
+    pathParams?: boolean;
+    queryParams?: boolean;
+    requestBody?: boolean;
+  }) {
+    if (details.headers) {
+      await expect(this.dialog.getByText("Request Headers")).toBeVisible();
+    }
+    if (details.pathParams) {
+      await expect(this.dialog.getByText("Path Parameters")).toBeVisible();
+    }
+    if (details.queryParams) {
+      await expect(this.dialog.getByText("Query Parameters")).toBeVisible();
+    }
+    if (details.requestBody) {
+      await expect(this.dialog.getByText("Request Body")).toBeVisible();
+    }
+  }
+
+  async expectResponseTabInfo(hasBody: boolean) {
+    if (hasBody) {
+      // The response body should be visible in a code block
+      await expect(this.dialog.locator(".code-block")).toBeVisible();
+    } else {
+      await expect(this.dialog.getByText("No response body")).toBeVisible();
+    }
   }
 
   // Export/Import methods
