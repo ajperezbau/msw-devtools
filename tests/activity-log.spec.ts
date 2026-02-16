@@ -433,4 +433,114 @@ test.describe("MSW DevTools - Activity Log", () => {
       await devToolsPage.expectPlaceholderVisible();
     });
   });
+
+  test.describe("Additional Features", () => {
+    test("should show status indicators with correct colors", async () => {
+      // Trigger a request
+      await devToolsPage.fetchUsersButton.click();
+
+      // Open DevTools and switch to Activity Log
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+
+      // Verify status indicator is visible
+      const entry = await devToolsPage.getLogEntry("users");
+      await expect(entry.locator(".status-dot.success")).toBeVisible();
+      await expect(entry.locator(".status-code")).toHaveText("200");
+    });
+
+    test("should show header title and status pill when request is selected", async () => {
+      // Trigger a request
+      await devToolsPage.fetchUsersButton.click();
+
+      // Open DevTools and switch to Activity Log
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+
+      // Select log entry
+      await devToolsPage.selectLogEntry("users");
+
+      // Verify header shows key and status
+      await expect(
+        devToolsPage.dialog.getByRole("heading", { name: "users" }),
+      ).toBeVisible();
+      await expect(devToolsPage.dialog.locator(".status-pill")).toContainText(
+        "200",
+      );
+    });
+
+    test("should show 'View in Registry' button in General tab", async () => {
+      // Trigger a request
+      await devToolsPage.fetchUsersButton.click();
+
+      // Open DevTools and switch to Activity Log
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+
+      // Select log entry
+      await devToolsPage.selectLogEntry("users");
+
+      // Verify "View in Registry" button is visible
+      await expect(
+        devToolsPage.dialog.getByRole("button", { name: /View in Registry/ }),
+      ).toBeVisible();
+    });
+
+    test("should show 'Use as Override' button in Response tab", async () => {
+      // Trigger a request
+      await devToolsPage.fetchProductsButton.click();
+
+      // Open DevTools and switch to Activity Log
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+
+      // Select log entry and switch to Response tab
+      await devToolsPage.selectLogEntry("products");
+      await devToolsPage.switchToTab("Response");
+
+      // Verify "Use as Override" button is visible
+      await expect(
+        devToolsPage.dialog.getByRole("button", { name: /Use as Override/ }),
+      ).toBeVisible();
+    });
+
+    test("should show selected state on clicked list item", async () => {
+      // Trigger a request
+      await devToolsPage.fetchUsersButton.click();
+
+      // Open DevTools and switch to Activity Log
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+
+      // Select log entry
+      const entry = await devToolsPage.getLogEntry("users");
+      await entry.click();
+
+      // Verify selected state
+      await expect(entry).toHaveClass(/selected/);
+    });
+
+    test("should maintain selection when switching between tabs", async () => {
+      // Trigger a request
+      await devToolsPage.fetchProductsButton.click();
+
+      // Open DevTools and switch to Activity Log
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+
+      // Select log entry
+      await devToolsPage.selectLogEntry("products");
+
+      // Verify General tab content
+      await devToolsPage.expectGeneralTabInfo({ handlerKey: "products" });
+
+      // Switch to Request tab
+      await devToolsPage.switchToTab("Request");
+      await devToolsPage.expectRequestTabInfo({ requestBody: true });
+
+      // Switch back to General tab
+      await devToolsPage.switchToTab("General");
+      await devToolsPage.expectGeneralTabInfo({ handlerKey: "products" });
+    });
+  });
 });
