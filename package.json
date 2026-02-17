@@ -1,5 +1,5 @@
 {
-  "name": "msw-devtools-plugin",
+  "name": "vue-msw-devtools",
   "version": "0.1.0",
   "description": "A powerful browser-based UI for managing Mock Service Worker (MSW) handlers in Vue 3 applications.",
   "type": "module",
