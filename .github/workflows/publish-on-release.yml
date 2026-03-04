@@ -61,5 +61,3 @@ jobs:
       # 7. Publicación usando pnpm (con flag para ignorar checks de git en CI)
       - name: Publish to npm
         run: pnpm publish --provenance --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
