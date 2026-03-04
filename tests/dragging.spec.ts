@@ -65,4 +65,52 @@ test.describe("MSW DevTools Dragging", () => {
       }
     }
   });
+
+  test("should keep relative position after window resize", async ({ page }) => {
+    const button = devToolsPage.toggleButton;
+
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    if (!viewport) return;
+
+    const initialBox = await button.boundingBox();
+    expect(initialBox).not.toBeNull();
+
+    if (!initialBox) return;
+
+    // Move the button to a non-trivial position (near bottom-right)
+    const targetX = viewport.width - 120;
+    const targetY = viewport.height - 120;
+
+    await button.hover();
+    await page.mouse.down();
+    await page.mouse.move(targetX, targetY, { steps: 10 });
+    await page.mouse.up();
+
+    const boxBeforeResize = await button.boundingBox();
+    expect(boxBeforeResize).not.toBeNull();
+    if (!boxBeforeResize) return;
+
+    // Shrink the viewport
+    const smallerViewport = {
+      width: viewport.width - 200,
+      height: viewport.height - 200,
+    };
+    await page.setViewportSize(smallerViewport);
+
+    // Allow layout to settle
+    await page.waitForTimeout(100);
+
+    // Restore original viewport size
+    await page.setViewportSize(viewport);
+    await page.waitForTimeout(100);
+
+    const boxAfterResize = await button.boundingBox();
+    expect(boxAfterResize).not.toBeNull();
+    if (!boxAfterResize) return;
+
+    // Position should remain effectively the same (within a small tolerance)
+    expect(Math.abs(boxAfterResize.x - boxBeforeResize.x)).toBeLessThan(4);
+    expect(Math.abs(boxAfterResize.y - boxBeforeResize.y)).toBeLessThan(4);
+  });
 });
