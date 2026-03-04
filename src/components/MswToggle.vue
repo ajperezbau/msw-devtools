@@ -98,8 +98,12 @@ const endDrag = () => {
     preferredPosition.value = current;
     position.value = current;
 
-    localStorage.setItem(X_KEY, String(current.x));
-    localStorage.setItem(Y_KEY, String(current.y));
+    try {
+      localStorage.setItem(X_KEY, String(current.x));
+      localStorage.setItem(Y_KEY, String(current.y));
+    } catch {
+      // ignore storage errors
+    }
   }
 
   window.removeEventListener("mousemove", onDrag);
@@ -115,6 +119,9 @@ const toggleDevtools = () => {
 };
 
 const handleResize = () => {
+  // Avoid fighting with the user while dragging
+  if (isDragging.value) return;
+
   const clampedPreferred = clampToViewport(
     preferredPosition.value.x,
     preferredPosition.value.y,
@@ -130,15 +137,20 @@ onMounted(() => {
   if (savedX !== null && savedY !== null) {
     const x = Number(savedX);
     const y = Number(savedY);
-    const clamped = clampToViewport(x, y);
-    preferredPosition.value = clamped;
-    position.value = clamped;
+
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      // Guardamos la preferencia tal cual se eligió originalmente
+      preferredPosition.value = { x, y };
+      // ...y solo clampamos la posición renderizada según el viewport actual
+      position.value = clampToViewport(x, y);
+    } else {
+      const clamped = clampToViewport(window.innerWidth, window.innerHeight);
+      preferredPosition.value = clamped;
+      position.value = clamped;
+    }
   } else {
-    const defaultPosition = {
-      x: window.innerWidth - 80,
-      y: window.innerHeight - 80,
-    };
-    const clamped = clampToViewport(defaultPosition.x, defaultPosition.y);
+    // Posición por defecto: usamos las mismas reglas de clamp
+    const clamped = clampToViewport(window.innerWidth, window.innerHeight);
     preferredPosition.value = clamped;
     position.value = clamped;
   }
