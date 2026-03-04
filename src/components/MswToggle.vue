@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 
+const X_KEY = "msw-devtools-x";
+const Y_KEY = "msw-devtools-y";
+
+const PADDING = 10;
+const BUTTON_SIZE = 60;
+
 const props = defineProps<{
   modelValue: boolean;
 }>();
@@ -10,9 +16,17 @@ const emit = defineEmits<{
 }>();
 
 const position = ref({ x: 0, y: 0 });
+const preferredPosition = ref({ x: 0, y: 0 });
 const isDragging = ref(false);
 const dragStart = ref({ x: 0, y: 0 });
 const hasMoved = ref(false);
+
+const clampToViewport = (x: number, y: number) => {
+  return {
+    x: Math.max(PADDING, Math.min(window.innerWidth - BUTTON_SIZE - PADDING, x)),
+    y: Math.max(PADDING, Math.min(window.innerHeight - BUTTON_SIZE - PADDING, y)),
+  };
+};
 
 const startDrag = (e: MouseEvent | TouchEvent) => {
   isDragging.value = true;
@@ -73,25 +87,23 @@ const onDrag = (e: MouseEvent | TouchEvent) => {
   hasMoved.value = true;
 
   // Constrain position to viewport
-  const padding = 10;
-  const buttonSize = 60; // Approximate size of the button
-  position.value = {
-    x: Math.max(
-      padding,
-      Math.min(window.innerWidth - buttonSize - padding, newX),
-    ),
-    y: Math.max(
-      padding,
-      Math.min(window.innerHeight - buttonSize - padding, newY),
-    ),
-  };
+  position.value = clampToViewport(newX, newY);
 };
 
 const endDrag = () => {
   if (isDragging.value) {
     isDragging.value = false;
-    localStorage.setItem("msw-devtools-x", String(position.value.x));
-    localStorage.setItem("msw-devtools-y", String(position.value.y));
+
+    const current = clampToViewport(position.value.x, position.value.y);
+    preferredPosition.value = current;
+    position.value = current;
+
+    try {
+      localStorage.setItem(X_KEY, String(current.x));
+      localStorage.setItem(Y_KEY, String(current.y));
+    } catch {
+      // ignore storage errors
+    }
   }
 
   window.removeEventListener("mousemove", onDrag);
@@ -107,31 +119,40 @@ const toggleDevtools = () => {
 };
 
 const handleResize = () => {
-  const padding = 10;
-  const buttonSize = 60;
-  position.value = {
-    x: Math.max(
-      padding,
-      Math.min(window.innerWidth - buttonSize - padding, position.value.x),
-    ),
-    y: Math.max(
-      padding,
-      Math.min(window.innerHeight - buttonSize - padding, position.value.y),
-    ),
-  };
+  // Avoid fighting with the user while dragging
+  if (isDragging.value) return;
+
+  const clampedPreferred = clampToViewport(
+    preferredPosition.value.x,
+    preferredPosition.value.y,
+  );
+
+  position.value = clampedPreferred;
 };
 
 onMounted(() => {
-  const savedX = localStorage.getItem("msw-devtools-x");
-  const savedY = localStorage.getItem("msw-devtools-y");
+  const savedX = localStorage.getItem(X_KEY);
+  const savedY = localStorage.getItem(Y_KEY);
 
   if (savedX !== null && savedY !== null) {
-    position.value = { x: Number(savedX), y: Number(savedY) };
+    const x = Number(savedX);
+    const y = Number(savedY);
+
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      // Guardamos la preferencia tal cual se eligió originalmente
+      preferredPosition.value = { x, y };
+      // ...y solo clampamos la posición renderizada según el viewport actual
+      position.value = clampToViewport(x, y);
+    } else {
+      const clamped = clampToViewport(window.innerWidth, window.innerHeight);
+      preferredPosition.value = clamped;
+      position.value = clamped;
+    }
   } else {
-    position.value = {
-      x: window.innerWidth - 80,
-      y: window.innerHeight - 80,
-    };
+    // Posición por defecto: usamos las mismas reglas de clamp
+    const clamped = clampToViewport(window.innerWidth, window.innerHeight);
+    preferredPosition.value = clamped;
+    position.value = clamped;
   }
 
   window.addEventListener("resize", handleResize);
