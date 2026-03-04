@@ -64,6 +64,19 @@
     </div>
   </div>
 
+  <div v-if="focusedKey" class="filter-banner">
+    <div class="banner-content">
+      <span>Viewing handler:</span>
+      <MswBadge
+        v-if="scenarioRegistry[focusedKey]"
+        variant="method"
+        :label="scenarioRegistry[focusedKey].method"
+      />
+      <strong>{{ displayKey(focusedKey) }}</strong>
+    </div>
+    <button class="reset-link" @click="focusedKey = null">Clear</button>
+  </div>
+
   <div v-if="isSelectionMode" class="selection-toolbar">
     <div class="selection-info">
       <span class="selection-count"
@@ -303,6 +316,7 @@ const searchQuery = ref(localStorage.getItem("msw-scenarios-filter") || "");
 const showOnlyModified = ref(
   localStorage.getItem("msw-show-only-modified") === "true",
 );
+const focusedKey = ref<string | null>(null);
 
 const isSelectionMode = ref(false);
 const selectedKeys = ref(new Set<string>());
@@ -315,6 +329,10 @@ const toggleSelectionMode = () => {
   }
 };
 
+const focusHandler = (key: string) => {
+  focusedKey.value = key;
+};
+
 const setFilter = (query: string) => {
   searchQuery.value = query;
 };
@@ -323,6 +341,7 @@ const setFilter = (query: string) => {
 defineExpose({
   toggleSelectionMode,
   isSelectionMode,
+  focusHandler,
   setFilter,
 });
 
@@ -417,6 +436,10 @@ const saveCurrentAsPreset = () => {
 };
 
 const filteredRegistryKeys = computed(() => {
+  if (focusedKey.value && scenarioRegistry[focusedKey.value]) {
+    return [focusedKey.value];
+  }
+
   const query = searchQuery.value.toLowerCase();
   return Object.keys(scenarioRegistry).filter((key) => {
     const metadata = scenarioRegistry[key];
@@ -555,6 +578,36 @@ watch(showOnlyModified, (newValue) => {
   font-size: 0.75rem;
   color: var(--text-tertiary);
   white-space: nowrap;
+}
+
+.filter-banner {
+  padding: 0.5rem 1.5rem;
+  background-color: var(--accent-soft);
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-banner strong {
+  color: var(--accent-color);
+}
+
+.reset-link {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
 }
 
 .selection-toolbar {

@@ -491,12 +491,13 @@ test.describe("MSW DevTools - Activity Log", () => {
     test("should filter registry when clicking 'View in Registry'", async () => {
       // Trigger a request
       await devToolsPage.fetchUsersButton.click();
+      await devToolsPage.fetchProductsButton.click();
 
       // Open DevTools and switch to Activity Log
       await devToolsPage.toggle();
       await devToolsPage.switchTab("Activity Log");
 
-      // Select log entry
+      // Select log entry (users)
       await devToolsPage.selectLogEntry("users");
 
       // Click "View in Registry"
@@ -512,16 +513,85 @@ test.describe("MSW DevTools - Activity Log", () => {
         }),
       ).toHaveClass(/active/);
 
-      // Search input should be filled with the handler key
-      // We need to know what the key is. DevToolsPage might have it or we can check the input value.
-      const searchInputValue = await devToolsPage.searchInput.inputValue();
-      expect(searchInputValue).not.toBe("");
-      expect(searchInputValue).toContain("users");
+      // Verify the filter banner is visible with the correct handler name
+      await expect(
+        devToolsPage.dialog.getByText(/Viewing handler:.*users/i),
+      ).toBeVisible();
 
-      // Registry should show filtered results
-      await expect(devToolsPage.registryTable.locator("tbody tr")).toHaveCount(
-        1,
-      );
+      // Verify the method badge is visible in the banner
+      await expect(
+        devToolsPage.dialog.locator(".filter-banner .msw-badge"),
+      ).toContainText("GET");
+
+      // Table should show the handler and NOT the 'No handlers found' message
+      await expect(
+        devToolsPage.registryTable.getByText("No handlers found"),
+      ).not.toBeVisible();
+
+      // The 'users' row should be visible
+      const usersRow = await devToolsPage.getHandlerRow("users");
+      await expect(usersRow).toBeVisible();
+
+      // The 'products' row should NOT be visible
+      const productsRow = await devToolsPage.getHandlerRow("products");
+      await expect(productsRow).not.toBeVisible();
+
+      // Click "Clear" on the banner
+      await devToolsPage.dialog.getByRole("button", { name: "Clear" }).click();
+
+      // Banner should disappear
+      await expect(
+        devToolsPage.dialog.getByText(/Viewing handler:/),
+      ).not.toBeVisible();
+
+      // Both handlers should be visible again
+      await expect(await devToolsPage.getHandlerRow("users")).toBeVisible();
+      await expect(await devToolsPage.getHandlerRow("products")).toBeVisible();
+    });
+
+    test("should show displayKey in Activity Log filter banner when navigated from Registry", async () => {
+      // Trigger a request
+      await devToolsPage.fetchUsersButton.click();
+
+      // Open DevTools
+      await devToolsPage.toggle();
+
+      // Go to Registry
+      await devToolsPage.switchTab("Registry");
+
+      // Click "View logs for this handler" for 'users'
+      const usersRow = await devToolsPage.getHandlerRow("users");
+      await usersRow
+        .getByRole("button", { name: "View logs for this handler" })
+        .click();
+
+      // Should be in Activity Log tab
+      await expect(
+        devToolsPage.dialog.getByRole("button", {
+          name: "Activity Log",
+          exact: false,
+        }),
+      ).toHaveClass(/active/);
+
+      // Verify the filter banner is visible with the display version of the key
+      // 'users' displayKey is likely 'users' if not modified, but we check if it shows "Filter: users"
+      await expect(
+        devToolsPage.dialog.getByText(/Filter:.*users/i),
+      ).toBeVisible();
+
+      // Verify the method badge is visible in the activity log filter banner
+      await expect(
+        devToolsPage.dialog.locator(".filter-banner .msw-badge"),
+      ).toContainText("GET");
+
+      // Click "Reset" on the banner
+      await devToolsPage.dialog
+        .locator(".filter-banner")
+        .getByRole("button", { name: "Reset" })
+        .click();
+
+      // Banner should disappear
+      await expect(devToolsPage.dialog.getByText(/Filter:/)).not.toBeVisible();
     });
 
     test("should show 'Use as Override' button in Response tab", async () => {

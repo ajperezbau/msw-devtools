@@ -365,7 +365,7 @@ const viewLogForKey = (key: string) => {
 const viewHandlerForKey = async (key: string) => {
   activeTab.value = "registry";
   await nextTick();
-  registryViewRef.value?.setFilter(key);
+  registryViewRef.value?.focusHandler(key);
 };
 
 const formatBody = (body: unknown) => {

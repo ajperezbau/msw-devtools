@@ -83,9 +83,15 @@
       </div>
 
       <div v-if="filterKey" class="filter-banner">
-        <span
-          >Filter: <strong>{{ filterKey }}</strong></span
-        >
+        <div class="banner-content">
+          <span>Filter:</span>
+          <MswBadge
+            v-if="scenarioRegistry[filterKey]"
+            variant="method"
+            :label="scenarioRegistry[filterKey].method"
+          />
+          <strong>{{ displayKey(filterKey) }}</strong>
+        </div>
         <button class="reset-link" @click="emit('update:filterKey', null)">
           Reset
         </button>
@@ -636,6 +642,12 @@ const formatFullTime = (timestamp: number) => {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border-color);
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .reset-link {
