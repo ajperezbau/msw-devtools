@@ -109,6 +109,9 @@ test.describe("MSW DevTools - Activity Log", () => {
       await devToolsPage.toggle();
       await devToolsPage.switchTab("Activity Log");
 
+      // Wait for both requests to be logged before filtering
+      await devToolsPage.expectRequestCount(2);
+
       // Click GET filter
       await devToolsPage.clickMethodFilter("GET");
 
@@ -131,6 +134,9 @@ test.describe("MSW DevTools - Activity Log", () => {
       // Open DevTools and switch to Activity Log
       await devToolsPage.toggle();
       await devToolsPage.switchTab("Activity Log");
+
+      // Wait for both requests to be logged before filtering
+      await devToolsPage.expectRequestCount(2);
 
       // Click POST filter
       await devToolsPage.clickMethodFilter("POST");
@@ -155,6 +161,9 @@ test.describe("MSW DevTools - Activity Log", () => {
       await devToolsPage.toggle();
       await devToolsPage.switchTab("Activity Log");
 
+      // Wait for both requests to be logged before filtering
+      await devToolsPage.expectRequestCount(2);
+
       // Click GET and POST filters
       await devToolsPage.clickMethodFilter("GET");
       await devToolsPage.clickMethodFilter("POST");
@@ -171,6 +180,9 @@ test.describe("MSW DevTools - Activity Log", () => {
       // Open DevTools and switch to Activity Log
       await devToolsPage.toggle();
       await devToolsPage.switchTab("Activity Log");
+
+      // Wait for both requests to be logged before filtering
+      await devToolsPage.expectRequestCount(2);
 
       // Select GET filter, then deselect it
       await devToolsPage.clickMethodFilter("GET");

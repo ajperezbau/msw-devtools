@@ -86,9 +86,9 @@
         <div class="banner-content">
           <span>Filter:</span>
           <MswBadge
-            v-if="scenarioRegistry[filterKey]"
+            v-if="filterKey && scenarioRegistry[filterKey]"
             variant="method"
-            :label="scenarioRegistry[filterKey].method"
+            :label="scenarioRegistry[filterKey]!.method"
           />
           <strong>{{ displayKey(filterKey) }}</strong>
         </div>

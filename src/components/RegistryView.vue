@@ -68,9 +68,9 @@
     <div class="banner-content">
       <span>Viewing handler:</span>
       <MswBadge
-        v-if="scenarioRegistry[focusedKey]"
+        v-if="focusedKey && scenarioRegistry[focusedKey]"
         variant="method"
-        :label="scenarioRegistry[focusedKey].method"
+        :label="scenarioRegistry[focusedKey]!.method"
       />
       <strong>{{ displayKey(focusedKey) }}</strong>
     </div>
