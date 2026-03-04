@@ -1,19 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 
-type AnchorX = "left" | "right";
-type AnchorY = "top" | "bottom";
-
-type AnchorPosition = {
-  anchorX: AnchorX;
-  anchorY: AnchorY;
-  offsetX: number;
-  offsetY: number;
-};
-
-const POSITION_STORAGE_KEY = "msw-devtools-position";
-const LEGACY_X_KEY = "msw-devtools-x";
-const LEGACY_Y_KEY = "msw-devtools-y";
+const X_KEY = "msw-devtools-x";
+const Y_KEY = "msw-devtools-y";
 
 const PADDING = 10;
 const BUTTON_SIZE = 60;
@@ -27,7 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const position = ref({ x: 0, y: 0 });
-const anchorPosition = ref<AnchorPosition | null>(null);
+const preferredPosition = ref({ x: 0, y: 0 });
 const isDragging = ref(false);
 const dragStart = ref({ x: 0, y: 0 });
 const hasMoved = ref(false);
@@ -36,39 +25,6 @@ const clampToViewport = (x: number, y: number) => {
   return {
     x: Math.max(PADDING, Math.min(window.innerWidth - BUTTON_SIZE - PADDING, x)),
     y: Math.max(PADDING, Math.min(window.innerHeight - BUTTON_SIZE - PADDING, y)),
-  };
-};
-
-const computePositionFromAnchor = (anchor: AnchorPosition) => {
-  const x =
-    anchor.anchorX === "left"
-      ? anchor.offsetX
-      : window.innerWidth - BUTTON_SIZE - anchor.offsetX;
-  const y =
-    anchor.anchorY === "top"
-      ? anchor.offsetY
-      : window.innerHeight - BUTTON_SIZE - anchor.offsetY;
-
-  return clampToViewport(x, y);
-};
-
-const deriveAnchorFromPosition = (x: number, y: number): AnchorPosition => {
-  const distLeft = x;
-  const distRight = window.innerWidth - BUTTON_SIZE - x;
-  const distTop = y;
-  const distBottom = window.innerHeight - BUTTON_SIZE - y;
-
-  const anchorX: AnchorX = distLeft <= distRight ? "left" : "right";
-  const anchorY: AnchorY = distTop <= distBottom ? "top" : "bottom";
-
-  const offsetX = anchorX === "left" ? distLeft : distRight;
-  const offsetY = anchorY === "top" ? distTop : distBottom;
-
-  return {
-    anchorX,
-    anchorY,
-    offsetX,
-    offsetY,
   };
 };
 
@@ -139,20 +95,11 @@ const endDrag = () => {
     isDragging.value = false;
 
     const current = clampToViewport(position.value.x, position.value.y);
+    preferredPosition.value = current;
     position.value = current;
 
-    const derivedAnchor = deriveAnchorFromPosition(current.x, current.y);
-    anchorPosition.value = derivedAnchor;
-
-    try {
-      localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(derivedAnchor));
-    } catch {
-      // ignore storage errors
-    }
-
-    // Keep legacy keys for backwards compatibility
-    localStorage.setItem(LEGACY_X_KEY, String(current.x));
-    localStorage.setItem(LEGACY_Y_KEY, String(current.y));
+    localStorage.setItem(X_KEY, String(current.x));
+    localStorage.setItem(Y_KEY, String(current.y));
   }
 
   window.removeEventListener("mousemove", onDrag);
@@ -168,64 +115,33 @@ const toggleDevtools = () => {
 };
 
 const handleResize = () => {
-  if (anchorPosition.value) {
-    position.value = computePositionFromAnchor(anchorPosition.value);
-  } else {
-    position.value = clampToViewport(position.value.x, position.value.y);
-  }
+  const clampedPreferred = clampToViewport(
+    preferredPosition.value.x,
+    preferredPosition.value.y,
+  );
+
+  position.value = clampedPreferred;
 };
 
 onMounted(() => {
-  let initialAnchor: AnchorPosition | null = null;
+  const savedX = localStorage.getItem(X_KEY);
+  const savedY = localStorage.getItem(Y_KEY);
 
-  const storedAnchor = localStorage.getItem(POSITION_STORAGE_KEY);
-  if (storedAnchor) {
-    try {
-      const parsed = JSON.parse(storedAnchor) as AnchorPosition;
-      if (
-        parsed &&
-        (parsed.anchorX === "left" || parsed.anchorX === "right") &&
-        (parsed.anchorY === "top" || parsed.anchorY === "bottom") &&
-        typeof parsed.offsetX === "number" &&
-        typeof parsed.offsetY === "number"
-      ) {
-        initialAnchor = parsed;
-      }
-    } catch {
-      // ignore parse errors and fall back to legacy logic
-    }
+  if (savedX !== null && savedY !== null) {
+    const x = Number(savedX);
+    const y = Number(savedY);
+    const clamped = clampToViewport(x, y);
+    preferredPosition.value = clamped;
+    position.value = clamped;
+  } else {
+    const defaultPosition = {
+      x: window.innerWidth - 80,
+      y: window.innerHeight - 80,
+    };
+    const clamped = clampToViewport(defaultPosition.x, defaultPosition.y);
+    preferredPosition.value = clamped;
+    position.value = clamped;
   }
-
-  if (!initialAnchor) {
-    const savedX = localStorage.getItem(LEGACY_X_KEY);
-    const savedY = localStorage.getItem(LEGACY_Y_KEY);
-
-    if (savedX !== null && savedY !== null) {
-      const x = Number(savedX);
-      const y = Number(savedY);
-      const clamped = clampToViewport(x, y);
-      initialAnchor = deriveAnchorFromPosition(clamped.x, clamped.y);
-    } else {
-      const defaultPosition = {
-        x: window.innerWidth - 80,
-        y: window.innerHeight - 80,
-      };
-      const clamped = clampToViewport(
-        defaultPosition.x,
-        defaultPosition.y,
-      );
-      initialAnchor = deriveAnchorFromPosition(clamped.x, clamped.y);
-    }
-
-    try {
-      localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(initialAnchor));
-    } catch {
-      // ignore storage errors
-    }
-  }
-
-  anchorPosition.value = initialAnchor;
-  position.value = computePositionFromAnchor(initialAnchor);
 
   window.addEventListener("resize", handleResize);
 });

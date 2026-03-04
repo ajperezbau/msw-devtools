@@ -66,7 +66,7 @@ test.describe("MSW DevTools Dragging", () => {
     }
   });
 
-  test("should keep relative position after window resize", async ({ page }) => {
+  test("should keep position while in viewport and restore when viewport grows again", async ({ page }) => {
     const button = devToolsPage.toggleButton;
 
     const viewport = page.viewportSize();
@@ -78,9 +78,9 @@ test.describe("MSW DevTools Dragging", () => {
 
     if (!initialBox) return;
 
-    // Move the button to a non-trivial position (near bottom-right)
-    const targetX = viewport.width - 120;
-    const targetY = viewport.height - 120;
+    // Move the button roughly to the center of the screen
+    const targetX = viewport.width / 2;
+    const targetY = viewport.height / 2;
 
     await button.hover();
     await page.mouse.down();
@@ -91,26 +91,51 @@ test.describe("MSW DevTools Dragging", () => {
     expect(boxBeforeResize).not.toBeNull();
     if (!boxBeforeResize) return;
 
-    // Shrink the viewport
-    const smallerViewport = {
-      width: viewport.width - 200,
-      height: viewport.height - 200,
+    // Shrink the viewport slightly but keep the button within the viewport
+    const slightlySmallerViewport = {
+      width: viewport.width - 50,
+      height: viewport.height - 50,
     };
-    await page.setViewportSize(smallerViewport);
-
-    // Allow layout to settle
+    await page.setViewportSize(slightlySmallerViewport);
     await page.waitForTimeout(100);
+
+    const boxAfterSmallResize = await button.boundingBox();
+    expect(boxAfterSmallResize).not.toBeNull();
+    if (!boxAfterSmallResize) return;
+
+    // Position should remain effectively the same while still inside viewport
+    expect(Math.abs(boxAfterSmallResize.x - boxBeforeResize.x)).toBeLessThan(6);
+    expect(Math.abs(boxAfterSmallResize.y - boxBeforeResize.y)).toBeLessThan(6);
+
+    // Now shrink significantly so the previous preferred position would be outside viewport,
+    // forcing the button to move (clamp)
+    const verySmallViewport = {
+      width: Math.max(200, Math.floor(boxBeforeResize.x + 40)),
+      height: Math.max(200, Math.floor(boxBeforeResize.y + 40)),
+    };
+    await page.setViewportSize(verySmallViewport);
+    await page.waitForTimeout(100);
+
+    const boxAfterVerySmallResize = await button.boundingBox();
+    expect(boxAfterVerySmallResize).not.toBeNull();
+    if (!boxAfterVerySmallResize) return;
+
+    // After going out of viewport, the button should have moved
+    expect(
+      Math.abs(boxAfterVerySmallResize.x - boxBeforeResize.x) > 10 ||
+        Math.abs(boxAfterVerySmallResize.y - boxBeforeResize.y) > 10,
+    ).toBeTruthy();
 
     // Restore original viewport size
     await page.setViewportSize(viewport);
     await page.waitForTimeout(100);
 
-    const boxAfterResize = await button.boundingBox();
-    expect(boxAfterResize).not.toBeNull();
-    if (!boxAfterResize) return;
+    const boxAfterRestore = await button.boundingBox();
+    expect(boxAfterRestore).not.toBeNull();
+    if (!boxAfterRestore) return;
 
-    // Position should remain effectively the same (within a small tolerance)
-    expect(Math.abs(boxAfterResize.x - boxBeforeResize.x)).toBeLessThan(4);
-    expect(Math.abs(boxAfterResize.y - boxBeforeResize.y)).toBeLessThan(4);
+    // When viewport grows again, the button should return close to its original position
+    expect(Math.abs(boxAfterRestore.x - boxBeforeResize.x)).toBeLessThan(4);
+    expect(Math.abs(boxAfterRestore.y - boxBeforeResize.y)).toBeLessThan(4);
   });
 });
