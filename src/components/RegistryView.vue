@@ -315,10 +315,15 @@ const toggleSelectionMode = () => {
   }
 };
 
+const setFilter = (query: string) => {
+  searchQuery.value = query;
+};
+
 // Expose to parent
 defineExpose({
   toggleSelectionMode,
   isSelectionMode,
+  setFilter,
 });
 
 const isAllSelected = computed({

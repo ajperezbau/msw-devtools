@@ -274,7 +274,9 @@ test.describe("MSW DevTools - Activity Log", () => {
 
       // Verify timestamp label and value exist
       await expect(devToolsPage.dialog.getByText("Timestamp")).toBeVisible();
-      await expect(devToolsPage.dialog.locator(".info-value.big")).toContainText(/\d{2}:\d{2}:\d{2}/);
+      await expect(
+        devToolsPage.dialog.locator(".info-value.big"),
+      ).toContainText(/\d{2}:\d{2}:\d{2}/);
     });
 
     test("should display source scenario in General tab", async () => {
@@ -484,6 +486,42 @@ test.describe("MSW DevTools - Activity Log", () => {
       await expect(
         devToolsPage.dialog.getByRole("button", { name: /View in Registry/ }),
       ).toBeVisible();
+    });
+
+    test("should filter registry when clicking 'View in Registry'", async () => {
+      // Trigger a request
+      await devToolsPage.fetchUsersButton.click();
+
+      // Open DevTools and switch to Activity Log
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+
+      // Select log entry
+      await devToolsPage.selectLogEntry("users");
+
+      // Click "View in Registry"
+      await devToolsPage.dialog
+        .getByRole("button", { name: /View in Registry/ })
+        .click();
+
+      // Should be in Registry tab
+      await expect(
+        devToolsPage.dialog.getByRole("button", {
+          name: "Registry",
+          exact: true,
+        }),
+      ).toHaveClass(/active/);
+
+      // Search input should be filled with the handler key
+      // We need to know what the key is. DevToolsPage might have it or we can check the input value.
+      const searchInputValue = await devToolsPage.searchInput.inputValue();
+      expect(searchInputValue).not.toBe("");
+      expect(searchInputValue).toContain("users");
+
+      // Registry should show filtered results
+      await expect(devToolsPage.registryTable.locator("tbody tr")).toHaveCount(
+        1,
+      );
     });
 
     test("should show 'Use as Override' button in Response tab", async () => {

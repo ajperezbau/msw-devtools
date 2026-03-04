@@ -362,8 +362,11 @@ const viewLogForKey = (key: string) => {
   activeTab.value = "log";
 };
 
-const viewHandlerForKey = (_key: string) => {
+const viewHandlerForKey = (key: string) => {
   activeTab.value = "registry";
+  requestAnimationFrame(() => {
+    registryViewRef.value?.setFilter(key);
+  });
 };
 
 const formatBody = (body: unknown) => {
