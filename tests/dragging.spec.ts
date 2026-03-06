@@ -97,7 +97,13 @@ test.describe("MSW DevTools Dragging", () => {
       height: viewport.height - 50,
     };
     await page.setViewportSize(slightlySmallerViewport);
-    await page.waitForTimeout(100);
+    // Wait for the resize event to be processed and Vue to update the DOM
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
 
     const boxAfterSmallResize = await button.boundingBox();
     expect(boxAfterSmallResize).not.toBeNull();
@@ -114,7 +120,20 @@ test.describe("MSW DevTools Dragging", () => {
       height: Math.max(200, Math.floor(boxBeforeResize.y + 40)),
     };
     await page.setViewportSize(verySmallViewport);
-    await page.waitForTimeout(100);
+    // Poll until the button is clamped to a new position (more than 10px displacement)
+    await expect
+      .poll(
+        async () => {
+          const box = await button.boundingBox();
+          if (!box) return false;
+          return (
+            Math.abs(box.x - boxBeforeResize.x) > 10 ||
+            Math.abs(box.y - boxBeforeResize.y) > 10
+          );
+        },
+        { timeout: 2000 },
+      )
+      .toBe(true);
 
     const boxAfterVerySmallResize = await button.boundingBox();
     expect(boxAfterVerySmallResize).not.toBeNull();
@@ -128,7 +147,20 @@ test.describe("MSW DevTools Dragging", () => {
 
     // Restore original viewport size
     await page.setViewportSize(viewport);
-    await page.waitForTimeout(100);
+    // Poll until the button is restored to its preferred position
+    await expect
+      .poll(
+        async () => {
+          const box = await button.boundingBox();
+          if (!box) return false;
+          return (
+            Math.abs(box.x - boxBeforeResize.x) < 4 &&
+            Math.abs(box.y - boxBeforeResize.y) < 4
+          );
+        },
+        { timeout: 2000 },
+      )
+      .toBe(true);
 
     const boxAfterRestore = await button.boundingBox();
     expect(boxAfterRestore).not.toBeNull();
