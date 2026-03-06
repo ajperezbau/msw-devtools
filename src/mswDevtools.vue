@@ -1,7 +1,14 @@
 <template>
   <MswToggle v-model="isOpen" />
 
-  <div v-if="isOpen" class="modal-backdrop" @click.self="isOpen = false">
+  <div
+    v-if="isOpen"
+    class="modal-backdrop"
+    @click.self="isOpen = false"
+    @focusin.stop
+    @focusout.stop
+    @keydown.stop="handleKeyDown"
+  >
     <div
       class="modal-content"
       :class="'theme-' + theme"
@@ -295,13 +302,13 @@
 
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import ActivityLogView from "./components/ActivityLogView.vue";
+import ExportOptionsModal from "./components/ExportOptionsModal.vue";
 import MswButton from "./components/MswButton.vue";
 import MswToggle from "./components/MswToggle.vue";
-import RegistryView from "./components/RegistryView.vue";
-import PresetsView from "./components/PresetsView.vue";
-import ActivityLogView from "./components/ActivityLogView.vue";
 import OverrideEditor from "./components/OverrideEditor.vue";
-import ExportOptionsModal from "./components/ExportOptionsModal.vue";
+import PresetsView from "./components/PresetsView.vue";
+import RegistryView from "./components/RegistryView.vue";
 import {
   activityLog,
   clearActivityLog,
