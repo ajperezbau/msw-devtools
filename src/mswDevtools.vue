@@ -53,6 +53,29 @@
         <div class="panel-actions">
           <div class="button-group passthrough-group">
             <MswButton
+              v-if="globalPassthrough || Object.values(scenarioState).some((s) => s === 'passthrough')"
+              type="button"
+              variant="icon"
+              @click="recordPassthrough = !recordPassthrough"
+              :class="{ active: recordPassthrough }"
+              :aria-pressed="recordPassthrough"
+              title="Record real API responses (Note: This will duplicate requests in the Network tab)"
+              aria-label="Toggle Record Passthrough"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="8" fill="currentColor" />
+              </svg>
+            </MswButton>
+            <MswButton
               type="button"
               variant="icon"
               @click="globalPassthrough = !globalPassthrough"
@@ -76,29 +99,6 @@
                 <path
                   d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
                 />
-              </svg>
-            </MswButton>
-            <MswButton
-              v-if="globalPassthrough || Object.values(scenarioState).some((s) => s === 'passthrough')"
-              type="button"
-              variant="icon"
-              @click="recordPassthrough = !recordPassthrough"
-              :class="{ active: recordPassthrough }"
-              :aria-pressed="recordPassthrough"
-              title="Record real API responses (Note: This will duplicate requests in the Network tab)"
-              aria-label="Toggle Record Passthrough"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="8" fill="currentColor" />
               </svg>
             </MswButton>
           </div>
