@@ -11,6 +11,7 @@ const exportOptionKeys = [
   "customScenarios",
   "customPresets",
   "globalDelay",
+  "globalPassthrough",
 ] as const;
 type ExportOptionKey = (typeof exportOptionKeys)[number];
 
@@ -134,6 +135,13 @@ const updateOption = (key: ExportOptionKey, value: boolean) => {
             :label-style="{ marginBottom: '0.75rem' }"
           >
             Global Delay Settings
+          </MswCheckbox>
+          <MswCheckbox
+            :model-value="props.options.globalPassthrough"
+            @update:modelValue="updateOption('globalPassthrough', $event)"
+            :label-style="{ marginBottom: '0.75rem' }"
+          >
+            Global Passthrough
           </MswCheckbox>
         </div>
       </div>

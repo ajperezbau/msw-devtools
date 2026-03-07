@@ -227,6 +227,21 @@
                 step="50"
                 placeholder="0"
                 class="handler-delay-input"
+                :disabled="
+                  scenarioState[key] === 'passthrough' ||
+                  (globalPassthrough &&
+                    !customOverrides[key]?.enabled &&
+                    scenarioState[key] === 'default')
+                "
+                :style="{
+                  opacity:
+                    scenarioState[key] === 'passthrough' ||
+                    (globalPassthrough &&
+                      !customOverrides[key]?.enabled &&
+                      scenarioState[key] === 'default')
+                      ? '0.5'
+                      : '1',
+                }"
                 @click.stop
               />
               <span class="ms-label">ms</span>
@@ -303,6 +318,7 @@ import {
   customScenarios,
   customPresets,
   globalDelay,
+  globalPassthrough,
   displayKey,
 } from "../mswRegistry";
 
@@ -364,11 +380,8 @@ const isAllSelected = computed({
 });
 
 const isModified = (key: string) => {
-  const handler = scenarioRegistry[key];
-  const defaultScenario = handler?.isNative ? "original" : "default";
-
   const scenarioModified =
-    scenarioState[key] && scenarioState[key] !== defaultScenario;
+    scenarioState[key] && scenarioState[key] !== "default";
   const delayModified = (handlerDelays[key] || 0) > 0;
   const hasOverride = customOverrides[key]?.enabled;
   return scenarioModified || delayModified || hasOverride;

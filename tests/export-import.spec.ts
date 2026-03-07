@@ -57,7 +57,7 @@ test.describe("MSW DevTools - Export and Import", () => {
     // Optional: read the file to ensure it's valid JSON
     const downloadPath = await download.path();
     const content = JSON.parse(fs.readFileSync(downloadPath!, "utf8"));
-    expect(content).toHaveProperty("version", 1);
+    expect(content).toHaveProperty("version", 2);
     expect(content).toHaveProperty("timestamp");
     expect(content).toHaveProperty("scenarios");
   });

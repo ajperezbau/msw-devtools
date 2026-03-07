@@ -35,3 +35,7 @@ dist-demo
 # Temporary files
 development-plan.md
 repomix-output.xml
+
+# TypeScript build artifacts in src/ (these should never be committed)
+src/**/*.js
+src/**/*.vue.js

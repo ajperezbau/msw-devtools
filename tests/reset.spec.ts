@@ -57,9 +57,9 @@ test.describe("MSW DevTools - Reset All", () => {
     await expect(productsRowReset.getByRole("combobox")).toHaveValue("default");
     await expect(productsRowReset.locator(".override-indicator")).toBeHidden();
 
-    // Native handler should be back to 'original'
+    // Native handler should be back to 'default'
     const statusRow = await devToolsPage.getHandlerRow("[GET] /api/status");
-    await expect(statusRow.getByRole("combobox")).toHaveValue("original");
+    await expect(statusRow.getByRole("combobox")).toHaveValue("default");
     // Custom scenario should be gone from the list
     await expect(
       statusRow.locator("option", { hasText: "Custom Status" }),

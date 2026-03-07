@@ -51,6 +51,57 @@
           </MswButton>
         </div>
         <div class="panel-actions">
+          <div class="button-group passthrough-group">
+            <MswButton
+              type="button"
+              variant="icon"
+              @click="globalPassthrough = !globalPassthrough"
+              :class="{ active: globalPassthrough }"
+              :aria-pressed="globalPassthrough"
+              title="Toggle Global Passthrough (forward all requests to real network)"
+              aria-label="Toggle Global Passthrough"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M2 12h20" />
+                <path
+                  d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                />
+              </svg>
+            </MswButton>
+            <MswButton
+              v-if="globalPassthrough || Object.values(scenarioState).some((s) => s === 'passthrough')"
+              type="button"
+              variant="icon"
+              @click="recordPassthrough = !recordPassthrough"
+              :class="{ active: recordPassthrough }"
+              :aria-pressed="recordPassthrough"
+              title="Record real API responses (Note: This will duplicate requests in the Network tab)"
+              aria-label="Toggle Record Passthrough"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="8" fill="currentColor" />
+              </svg>
+            </MswButton>
+          </div>
           <MswButton
             type="button"
             variant="icon"
@@ -316,7 +367,9 @@ import {
   customPresets,
   customScenarios,
   globalDelay,
+  globalPassthrough,
   handlerDelays,
+  recordPassthrough,
   scenarioRegistry,
   scenarioState,
 } from "./mswRegistry";
@@ -339,6 +392,7 @@ const exportOptions = ref<ExportOptions>({
   customScenarios: true,
   customPresets: true,
   globalDelay: true,
+  globalPassthrough: true,
 });
 
 const toggleTheme = () => {
@@ -440,8 +494,7 @@ const handleOutsideClick = (event: MouseEvent) => {
 
 const resetScenariosOnly = () => {
   Object.keys(scenarioState).forEach((key) => {
-    const handler = scenarioRegistry[key];
-    scenarioState[key] = handler?.isNative ? "original" : "default";
+    scenarioState[key] = "default";
   });
 
   // Also clear overrides as they affects the scenario returned
@@ -468,11 +521,11 @@ const clearConfigs = () => {
   localStorage.removeItem("msw-overrides");
   localStorage.removeItem("msw-custom-scenarios");
   localStorage.removeItem("msw-custom-presets");
+  localStorage.removeItem("msw-global-passthrough");
 
   // Reset all scenarios to their appropriate default in the reactive state
   Object.keys(scenarioState).forEach((key) => {
-    const handler = scenarioRegistry[key];
-    scenarioState[key] = handler?.isNative ? "original" : "default";
+    scenarioState[key] = "default";
   });
 
   // Reset all handler delays to 0
@@ -504,12 +557,16 @@ const clearConfigs = () => {
   // Reset global delay
   globalDelay.value = 0;
 
+  // Reset passthrough state
+  globalPassthrough.value = false;
+  recordPassthrough.value = false;
+
   showResetMenu.value = false;
 };
 
 const exportScenarios = () => {
   const data: any = {
-    version: 1,
+    version: 2,
     timestamp: Date.now(),
   };
 
@@ -530,6 +587,9 @@ const exportScenarios = () => {
   }
   if (exportOptions.value.globalDelay) {
     data.globalDelay = globalDelay.value;
+  }
+  if (exportOptions.value.globalPassthrough) {
+    data.globalPassthrough = globalPassthrough.value;
   }
 
   const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -590,6 +650,8 @@ const handleImport = (event: Event) => {
       if (data.globalDelay !== undefined) {
         globalDelay.value = data.globalDelay;
       }
+      // Retrocompatibilidad: globalPassthrough por defecto false si no existe
+      globalPassthrough.value = data.globalPassthrough ?? false;
 
       // eslint-disable-next-line no-alert
       alert(
