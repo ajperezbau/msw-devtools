@@ -650,7 +650,7 @@ const handleImport = (event: Event) => {
       if (data.globalDelay !== undefined) {
         globalDelay.value = data.globalDelay;
       }
-      // Retrocompatibilidad: globalPassthrough por defecto false si no existe
+      // Backward compatibility: globalPassthrough defaults to false if not present
       globalPassthrough.value = data.globalPassthrough ?? false;
 
       // eslint-disable-next-line no-alert

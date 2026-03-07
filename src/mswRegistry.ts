@@ -275,7 +275,7 @@ const registerInternal = (config: {
             return realResponse;
           } catch (error) {
             // eslint-disable-next-line no-console
-            console.error("[MSW Devtools] Error en grabación Passthrough:", error);
+            console.error("[MSW Devtools] Error in Passthrough recording:", error);
             return new HttpResponse(null, {
               status: 502,
               statusText: "Bad Gateway",
@@ -292,7 +292,7 @@ const registerInternal = (config: {
             status: 0,
             requestBody,
             responseBody:
-              "Petición enviada a la red real. Inspecciona la pestaña Network de tu navegador para ver la respuesta.",
+              "Request sent to real network. Inspect the Network tab of your browser to see the response.",
             headers,
             queryParams,
             pathParams: params as Record<string, string>,
