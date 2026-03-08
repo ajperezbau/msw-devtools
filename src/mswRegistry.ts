@@ -92,9 +92,6 @@ export const customScenarios = reactive<
 >(getPersistedCustomScenarios());
 export const customPresets = reactive<Preset[]>(getPersistedCustomPresets());
 export const globalDelay = ref(Number(localStorage.getItem(DELAY_KEY)) || 0);
-export const globalPassthrough = ref(
-  localStorage.getItem("msw-global-passthrough") === "true",
-);
 export const recordPassthrough = ref(false);
 
 export const scenarioRegistry = reactive<Record<string, HandlerMetadata>>({});
@@ -222,11 +219,7 @@ const registerInternal = (config: {
 
       const override = customOverrides[key];
 
-      const isPassthroughActive =
-        activeScenarioKey === "passthrough" ||
-        (globalPassthrough.value &&
-          !override?.enabled &&
-          activeScenarioKey === "default");
+      const isPassthroughActive = activeScenarioKey === "passthrough";
 
       if (isPassthroughActive) {
         const headers: Record<string, string> = {};
@@ -240,6 +233,7 @@ const registerInternal = (config: {
         });
 
         if (recordPassthrough.value) {
+          // MODO GRABACIÓN: Usamos bypass() para capturar la respuesta
           try {
             const proxyRequest = request.clone();
             const realResponse = await fetch(bypass(proxyRequest));
@@ -275,13 +269,17 @@ const registerInternal = (config: {
             return realResponse;
           } catch (error) {
             // eslint-disable-next-line no-console
-            console.error("[MSW Devtools] Error in Passthrough recording:", error);
+            console.error(
+              "[MSW Devtools] Error en grabación Passthrough:",
+              error,
+            );
             return new HttpResponse(null, {
               status: 502,
               statusText: "Bad Gateway",
             });
           }
         } else {
+          // MODO LIMPIO: Usamos passthrough() nativo
           activityLog.unshift({
             id: Math.random().toString(36).substring(2),
             timestamp: Date.now(),
@@ -291,8 +289,7 @@ const registerInternal = (config: {
             url: request.url,
             status: 0,
             requestBody,
-            responseBody:
-              "Request sent to real network. Inspect the Network tab of your browser to see the response.",
+            responseBody: "__PASSTHROUGH_NO_RECORD__",
             headers,
             queryParams,
             pathParams: params as Record<string, string>,
@@ -593,10 +590,6 @@ watch(
 
 watch(globalDelay, (newDelay) => {
   localStorage.setItem(DELAY_KEY, String(newDelay));
-});
-
-watch(globalPassthrough, (val) => {
-  localStorage.setItem("msw-global-passthrough", String(val));
 });
 
 /**

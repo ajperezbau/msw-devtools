@@ -51,37 +51,47 @@
           </MswButton>
         </div>
         <div class="panel-actions">
+          <MswButton
+            v-if="passthroughStatus !== 'none'"
+            type="button"
+            variant="icon"
+            @click="recordPassthrough = !recordPassthrough"
+            class="record-toggle"
+            :class="{ 'record-active': recordPassthrough }"
+            :aria-pressed="recordPassthrough"
+            title="Record real API responses (Note: This will duplicate requests in the Network tab)"
+            aria-label="Toggle Record Passthrough"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="8" fill="currentColor" />
+            </svg>
+          </MswButton>
           <div class="button-group passthrough-group">
             <MswButton
-              v-if="globalPassthrough || Object.values(scenarioState).some((s) => s === 'passthrough')"
               type="button"
               variant="icon"
-              @click="recordPassthrough = !recordPassthrough"
-              :class="{ active: recordPassthrough }"
-              :aria-pressed="recordPassthrough"
-              title="Record real API responses (Note: This will duplicate requests in the Network tab)"
-              aria-label="Toggle Record Passthrough"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="8" fill="currentColor" />
-              </svg>
-            </MswButton>
-            <MswButton
-              type="button"
-              variant="icon"
-              @click="globalPassthrough = !globalPassthrough"
-              :class="{ active: globalPassthrough }"
-              :aria-pressed="globalPassthrough"
-              title="Toggle Global Passthrough (forward all requests to real network)"
+              @click="toggleGlobalPassthrough"
+              class="passthrough-toggle"
+              :class="{
+                active: passthroughStatus === 'all',
+                partial: passthroughStatus === 'some',
+              }"
+              :title="
+                passthroughStatus === 'all'
+                  ? 'Disable Global Passthrough (Restore previous state)'
+                  : passthroughStatus === 'some'
+                    ? 'Enable Global Passthrough (Currently mixed)'
+                    : 'Enable Global Passthrough (Save state and set all to passthrough)'
+              "
               aria-label="Toggle Global Passthrough"
             >
               <svg
@@ -94,10 +104,19 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M2 12h20" />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  fill="none"
+                  :stroke-dasharray="
+                    passthroughStatus === 'some' ? '4 4' : 'none'
+                  "
+                />
+                <path d="M2 12h20" stroke="currentColor" />
                 <path
                   d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                  stroke="currentColor"
                 />
               </svg>
             </MswButton>
@@ -352,7 +371,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { nextTick, onMounted, onUnmounted, ref, watch, computed } from "vue";
 import ActivityLogView from "./components/ActivityLogView.vue";
 import ExportOptionsModal from "./components/ExportOptionsModal.vue";
 import MswButton from "./components/MswButton.vue";
@@ -367,7 +386,6 @@ import {
   customPresets,
   customScenarios,
   globalDelay,
-  globalPassthrough,
   handlerDelays,
   recordPassthrough,
   scenarioRegistry,
@@ -384,6 +402,61 @@ const theme = ref<"light" | "dark">(
   (localStorage.getItem("msw-devtools-theme") as "light" | "dark") || "dark",
 );
 
+const PASSTHROUGH_SNAPSHOT_KEY = "msw-passthrough-snapshot";
+const passthroughSnapshot = ref<Record<string, string> | null>(
+  JSON.parse(localStorage.getItem(PASSTHROUGH_SNAPSHOT_KEY) || "null"),
+);
+
+watch(
+  passthroughSnapshot,
+  (newVal) => {
+    if (newVal) {
+      localStorage.setItem(PASSTHROUGH_SNAPSHOT_KEY, JSON.stringify(newVal));
+    } else {
+      localStorage.removeItem(PASSTHROUGH_SNAPSHOT_KEY);
+    }
+  },
+  { deep: true },
+);
+
+const passthroughStatus = computed<"all" | "some" | "none">(() => {
+  const keys = Object.keys(scenarioRegistry);
+  if (keys.length === 0) return "none";
+  const passthroughCount = keys.filter(
+    (key) => scenarioState[key] === "passthrough",
+  ).length;
+  if (passthroughCount === 0) return "none";
+  if (passthroughCount === keys.length) return "all";
+  return "some";
+});
+
+const toggleGlobalPassthrough = () => {
+  const keys = Object.keys(scenarioRegistry);
+
+  if (passthroughStatus.value === "all") {
+    // RESTAURAR: Devolver los handlers a su estado previo (o 'default')
+    const snapshot = passthroughSnapshot.value;
+    keys.forEach((key) => {
+      scenarioState[key] =
+        snapshot && snapshot[key] ? snapshot[key] : "default";
+    });
+    passthroughSnapshot.value = null; // Limpiar snapshot
+    recordPassthrough.value = false; // Apagar la grabación efímera
+  } else {
+    // PAUSAR MOCKS: Tomar snapshot y forzar todos a passthrough
+    const currentSnapshot: Record<string, string> = {};
+    keys.forEach((key) => {
+      const currentScenario = scenarioState[key];
+      if (currentScenario) {
+        currentSnapshot[key] = currentScenario;
+      }
+      scenarioState[key] = "passthrough";
+      // Ya no borramos los overrides, mswRegistry.ts los ignora automaticamente
+    });
+    passthroughSnapshot.value = currentSnapshot;
+  }
+};
+
 const showExportDialog = ref(false);
 const exportOptions = ref<ExportOptions>({
   scenarios: true,
@@ -392,7 +465,6 @@ const exportOptions = ref<ExportOptions>({
   customScenarios: true,
   customPresets: true,
   globalDelay: true,
-  globalPassthrough: true,
 });
 
 const toggleTheme = () => {
@@ -521,7 +593,6 @@ const clearConfigs = () => {
   localStorage.removeItem("msw-overrides");
   localStorage.removeItem("msw-custom-scenarios");
   localStorage.removeItem("msw-custom-presets");
-  localStorage.removeItem("msw-global-passthrough");
 
   // Reset all scenarios to their appropriate default in the reactive state
   Object.keys(scenarioState).forEach((key) => {
@@ -558,7 +629,7 @@ const clearConfigs = () => {
   globalDelay.value = 0;
 
   // Reset passthrough state
-  globalPassthrough.value = false;
+  passthroughSnapshot.value = null;
   recordPassthrough.value = false;
 
   showResetMenu.value = false;
@@ -566,7 +637,7 @@ const clearConfigs = () => {
 
 const exportScenarios = () => {
   const data: any = {
-    version: 2,
+    version: 1,
     timestamp: Date.now(),
   };
 
@@ -587,9 +658,6 @@ const exportScenarios = () => {
   }
   if (exportOptions.value.globalDelay) {
     data.globalDelay = globalDelay.value;
-  }
-  if (exportOptions.value.globalPassthrough) {
-    data.globalPassthrough = globalPassthrough.value;
   }
 
   const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -650,8 +718,6 @@ const handleImport = (event: Event) => {
       if (data.globalDelay !== undefined) {
         globalDelay.value = data.globalDelay;
       }
-      // Backward compatibility: globalPassthrough defaults to false if not present
-      globalPassthrough.value = data.globalPassthrough ?? false;
 
       // eslint-disable-next-line no-alert
       alert(
@@ -914,6 +980,36 @@ watch(isOpen, (newValue) => {
   border-color: var(--accent-color);
   color: white;
   z-index: 2;
+}
+
+.button-group .msw-button.partial {
+  color: #f59e0b;
+}
+
+.passthrough-toggle {
+  --button-tint: #3b82f6;
+}
+
+.passthrough-toggle.msw-button.active,
+.passthrough-toggle.msw-button:hover {
+  background-color: var(--button-tint);
+  border-color: var(--button-tint);
+  color: white;
+}
+
+.passthrough-toggle.msw-button.partial {
+  color: var(--button-tint);
+  border-color: var(--button-tint);
+}
+
+.record-toggle {
+  --button-tint: #ef4444;
+}
+
+.record-toggle.msw-button:hover,
+.record-toggle.msw-button.record-active {
+  color: var(--button-tint);
+  border-color: var(--button-tint);
 }
 
 .button-group .msw-button:hover {

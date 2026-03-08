@@ -169,7 +169,10 @@
                 N
               </span>
               <span
-                v-if="customOverrides[key]?.enabled"
+                v-if="
+                  customOverrides[key]?.enabled &&
+                  scenarioState[key] !== 'passthrough'
+                "
                 class="override-indicator"
                 title="Manual override active"
               >
@@ -227,20 +230,9 @@
                 step="50"
                 placeholder="0"
                 class="handler-delay-input"
-                :disabled="
-                  scenarioState[key] === 'passthrough' ||
-                  (globalPassthrough &&
-                    !customOverrides[key]?.enabled &&
-                    scenarioState[key] === 'default')
-                "
+                :disabled="scenarioState[key] === 'passthrough'"
                 :style="{
-                  opacity:
-                    scenarioState[key] === 'passthrough' ||
-                    (globalPassthrough &&
-                      !customOverrides[key]?.enabled &&
-                      scenarioState[key] === 'default')
-                      ? '0.5'
-                      : '1',
+                  opacity: scenarioState[key] === 'passthrough' ? '0.5' : '1',
                 }"
                 @click.stop
               />
@@ -255,7 +247,11 @@
                 size="sm"
                 @click.stop="emit('open-override', key)"
                 class="icon-button"
-                :class="{ 'has-override': customOverrides[key]?.enabled }"
+                :class="{
+                  'has-override':
+                    customOverrides[key]?.enabled &&
+                    scenarioState[key] !== 'passthrough',
+                }"
                 title="Custom response override"
               >
                 <svg
@@ -318,7 +314,6 @@ import {
   customScenarios,
   customPresets,
   globalDelay,
-  globalPassthrough,
   displayKey,
 } from "../mswRegistry";
 
@@ -763,10 +758,6 @@ watch(showOnlyModified, (newValue) => {
   background-color: var(--table-hover);
 }
 
-.registry-table tr.is-modified {
-  background-color: var(--accent-soft);
-}
-
 .registry-table tr.is-selected {
   background-color: var(--bg-tertiary) !important;
 }
@@ -882,7 +873,6 @@ watch(showOnlyModified, (newValue) => {
 
 .scenario-select.is-modified {
   border-color: var(--accent-color);
-  background-color: var(--accent-soft);
   font-weight: 600;
 }
 

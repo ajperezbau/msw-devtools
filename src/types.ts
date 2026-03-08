@@ -87,5 +87,4 @@ export interface ExportOptions {
   customScenarios: boolean;
   customPresets: boolean;
   globalDelay: boolean;
-  globalPassthrough: boolean;
 }

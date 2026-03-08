@@ -334,8 +334,22 @@
 
           <!-- Response Tab -->
           <div v-if="activeTab === 'response'" class="tab-pane response-pane">
+            <div
+              v-if="selectedLog.responseBody === '__PASSTHROUGH_NO_RECORD__'"
+              class="empty-pane no-border passthrough-message"
+            >
+              <p>
+                Request sent to the real network. Check the Network tab of your
+                browser to see the response.
+              </p>
+              <p class="hint">
+                To capture and view responses here, enable the record mode (red
+                button). Note: This will cause requests to appear duplicated in
+                the Network panel.
+              </p>
+            </div>
             <CodeBlock
-              v-if="selectedLog.responseBody"
+              v-else-if="selectedLog.responseBody"
               :code="selectedLog.responseBody"
               language="json"
               max-height="100%"
@@ -349,7 +363,7 @@
                 </button>
               </template>
             </CodeBlock>
-            <div v-else class="empty-pane">No response body</div>
+            <div v-else class="empty-pane no-border">No response body</div>
           </div>
         </div>
       </template>
@@ -1137,6 +1151,27 @@ const formatFullTime = (timestamp: number) => {
   background: var(--bg-secondary);
   border-radius: 8px;
   border: 1px dashed var(--border-color);
+}
+
+.passthrough-message {
+  font-style: normal;
+  text-align: left;
+  padding: 2rem;
+  line-height: 1.6;
+}
+
+.passthrough-message p {
+  margin: 0 0 1rem 0;
+  color: var(--text-secondary);
+}
+
+.passthrough-message p:last-child {
+  margin-bottom: 0;
+}
+
+.passthrough-message .hint {
+  color: var(--text-tertiary);
+  font-size: 0.9em;
 }
 
 .params-grid {
