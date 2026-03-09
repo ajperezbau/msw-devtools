@@ -5,11 +5,13 @@ A powerful browser-based UI for managing [Mock Service Worker (MSW)](https://msw
 ## Features
 
 - 🛠 **Dynamic Scenario Switching**: Define multiple response scenarios for a single endpoint and switch between them without reloading.
+- 🌐 **Passthrough Mode**: Instantly bypass mocks and forward requests to the real API. Toggle globally (saving your previous mock states) or set it per-handler.
+- ⏺️ **Response Recording**: Opt-in recording mode to capture and inspect real API responses directly in the Activity Log.
 - ✍️ **Manual Overrides**: Edit response status codes and bodies (JSON or Text) directly in the browser.
 - ⏱ **Network Simulation**: Set global or per-handler delays to simulate different network conditions.
 - 📋 **Activity Log**: View a history of all requests handled by MSW, including request/response bodies with JSON path filtering.
-- � **Zero-Config Discovery**: Automatically detects existing MSW handlers without changing your code.
-- �💾 **Persistence**: All your settings (active scenarios, delays, overrides) are persisted in `localStorage`.
+- 🔌 **Zero-Config Discovery**: Automatically detects existing MSW handlers without changing your code.
+- 💾 **Persistence**: All your settings (active scenarios, delays, overrides) are persisted in `localStorage`.
 - 🔗 **URL Parameters Sync**: Deep-link to specific mock scenarios using URL query parameters.
 - ✨ **Custom Scenarios**: Save manual overrides as reusable custom scenarios.
 - 🍱 **Presets**: Group multiple handler scenarios into "Recipes" to replicate complex application flows.
@@ -54,7 +56,7 @@ app.mount("#app");
 
 ### Zero Config Discovery
 
-The plugin now automatically detects any existing handlers you have already registered in your MSW worker. They will appear in the DevTools UI under a default scenario named "original", allowing you to immediately:
+The plugin automatically detects any existing handlers you have already registered in your MSW worker. They will appear in the DevTools UI under a default scenario named "default", allowing you to immediately:
 
 - Set delays for existing handlers.
 - See them in the Activity Log.
@@ -95,7 +97,7 @@ While **Zero Config Discovery** is great for getting started, using `defineHandl
 
 - 🏗 **Multiple Scenarios**: Auto-discovery only captures the "original" behavior. `defineHandlers` allows you to define multiple states (e.g., `success`, `error`, `loading`) for the same endpoint.
 - 🏷 **Custom Labeling**: Instead of seeing `[GET] /api/very/long/path/to/users`, you can identify the handler with a simple, readable key like `users`.
-- 🎯 **Preset Integration**: Readable keys make it much easier to define and manage [Presets](#global-presets-recipes) in your codebase.
+- 🎯 **Preset Integration**: Readable keys make it much easier to define and manage Presets in your codebase.
 - ⚙️ **Default Scenarios**: Specify which scenario should be active when the application starts.
 - 🔝 **Explicit Priority**: Fine-tune the matching order for overlapping routes.
 
@@ -174,6 +176,8 @@ You can control network latency globally or per handler from the Devtools UI.
 
 Once installed, a floating gear icon will appear in your application.
 
+- **Global Passthrough**: Click the globe icon in the header to instantly bypass all mocks (Real API mode). The tool takes a smart snapshot of your active scenarios and restores them when you disable the passthrough.
+- **Record Passthrough**: When passthrough is active, a red record button appears. Enabling it captures the real API responses so you can inspect them in the Activity Log or easily save them as new manual overrides. _(Note: This duplicates requests in the browser's native Network tab)._
 - **Registry Tab**: View all registered handlers, change active scenarios, set individual delays, and create **Presets** using selective grouping.
 - **Activity Log Tab**: See real-time request logs. Click on an entry to inspect request/response bodies.
 - **Presets Tab**: View and apply saved groups of scenarios ("Recipes") to instantly change your app's state.
