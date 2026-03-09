@@ -189,7 +189,7 @@ export class DevToolsPage {
   async selectScenario(handlerName: string, scenarioName: string) {
     const row = await this.getHandlerRow(handlerName);
     const select = row.getByRole("combobox");
-    await select.selectOption({ label: scenarioName });
+    await select.selectOption(scenarioName);
   }
 
   // Activity Log methods
@@ -247,7 +247,9 @@ export class DevToolsPage {
   }
 
   async clickMethodFilter(method: "ALL" | "GET" | "POST" | "PUT" | "DELETE") {
-    await this.dialog.getByRole("button", { name: method, exact: true }).click();
+    await this.dialog
+      .getByRole("button", { name: method, exact: true })
+      .click();
   }
 
   async searchActivityLog(query: string) {
@@ -269,17 +271,11 @@ export class DevToolsPage {
   }
 
   async expectRequestCount(count: number) {
-    await expect(
-      this.dialog.getByText(`Requests (${count})`),
-    ).toBeVisible();
+    await expect(this.dialog.getByText(`Requests (${count})`)).toBeVisible();
   }
 
-  async switchToTab(
-    tab: "General" | "Request" | "Response",
-  ) {
-    await this.dialog
-      .getByRole("button", { name: tab, exact: false })
-      .click();
+  async switchToTab(tab: "General" | "Request" | "Response") {
+    await this.dialog.getByRole("button", { name: tab, exact: false }).click();
   }
 
   async expectTabContentVisible(heading: string) {
@@ -297,12 +293,16 @@ export class DevToolsPage {
     if (details.source) {
       await expect(this.dialog.getByText("Source")).toBeVisible();
       // Use locator for source badge to avoid multiple matches
-      await expect(this.dialog.locator(".source-badge")).toContainText(details.source);
+      await expect(this.dialog.locator(".source-badge")).toContainText(
+        details.source,
+      );
     }
     if (details.handlerKey) {
       await expect(this.dialog.getByText("Handler Key")).toBeVisible();
       // Use locator for code value to avoid multiple matches
-      await expect(this.dialog.locator(".info-value.code")).toContainText(details.handlerKey);
+      await expect(this.dialog.locator(".info-value.code")).toContainText(
+        details.handlerKey,
+      );
     }
   }
 

@@ -216,7 +216,14 @@
                 :key="scenario"
                 :value="scenario"
               >
-                {{ scenario }}{{ isCustomScenario(key, scenario) ? " ✨" : "" }}
+                {{ scenario === "passthrough" ? "Real API" : scenario
+                }}{{
+                  scenario === "passthrough"
+                    ? " 🌐"
+                    : isCustomScenario(key, scenario)
+                      ? " ✨"
+                      : ""
+                }}
               </option>
             </select>
           </td>
