@@ -218,7 +218,7 @@ test.describe("MSW DevTools - Passthrough Mode", () => {
       method: "GET",
       url: "/api/users",
       key: "users",
-      scenario: "REAL API (Network Error)",
+      scenario: "❌ REAL API (Recorded)",
       status: 0,
     });
   });

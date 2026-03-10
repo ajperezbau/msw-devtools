@@ -322,7 +322,7 @@ const registerInternal = (config: {
               id: Math.random().toString(36).substring(2),
               timestamp: Date.now(),
               key,
-              scenario: "❌ REAL API (Network Error)",
+              scenario: "❌ REAL API (Recorded)",
               method: method.toUpperCase(),
               url: request.url,
               status: 0,
