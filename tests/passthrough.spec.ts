@@ -33,9 +33,9 @@ test.describe("MSW DevTools - Passthrough Mode", () => {
     await devToolsPage.toggle();
     await devToolsPage.switchTab("Activity Log");
 
-    // The activity log should contain a REAL API (Passthrough) entry for users
+    // The activity log should contain a Real API entry for users
     const logEntry = dialog.getByRole("listitem").filter({
-      hasText: "REAL API",
+      hasText: "Real API",
     });
     await expect(logEntry.first()).toBeVisible();
   });
@@ -218,7 +218,7 @@ test.describe("MSW DevTools - Passthrough Mode", () => {
       method: "GET",
       url: "/api/users",
       key: "users",
-      scenario: "❌ REAL API (Recorded)",
+      scenario: "❌ Real API (Error Recorded)",
       status: 0,
     });
   });

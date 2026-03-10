@@ -430,7 +430,7 @@ test.describe("MSW DevTools - Activity Log", () => {
       await devToolsPage.switchTab("Activity Log");
 
       const logEntry = await devToolsPage.getLogEntry("users");
-      await expect(logEntry).toContainText("REAL API");
+      await expect(logEntry).toContainText("Real API (Not Recorded)");
 
       await devToolsPage.selectLogEntry("users");
       await devToolsPage.switchToTab("Response");
@@ -473,7 +473,7 @@ test.describe("MSW DevTools - Activity Log", () => {
       await devToolsPage.switchTab("Activity Log");
 
       const logEntry = await devToolsPage.getLogEntry("users");
-      await expect(logEntry).toContainText("REAL API");
+      await expect(logEntry).toContainText("Real API (Recorded)");
 
       await devToolsPage.selectLogEntry("users");
       await devToolsPage.switchToTab("Response");
