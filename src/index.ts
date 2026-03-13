@@ -5,7 +5,7 @@ import type { MswDevtoolsOptions } from "./types";
 
 export * from "./mswRegistry";
 
-const MswDevtoolsElement = defineCustomElement(MswDevtools);
+let MswDevtoolsElement: ReturnType<typeof defineCustomElement> | null = null;
 
 export function initMswDevtools(options: MswDevtoolsOptions): void {
   if (typeof window === "undefined") return;
@@ -20,8 +20,12 @@ export function initMswDevtools(options: MswDevtoolsOptions): void {
 
   setupMswRegistry(options.worker, options.urlResolver);
 
+  if (!MswDevtoolsElement) {
+    MswDevtoolsElement = defineCustomElement(MswDevtools);
+  }
+
   if (!customElements.get("msw-devtools")) {
-    customElements.define("msw-devtools", MswDevtoolsElement);
+    customElements.define("msw-devtools", MswDevtoolsElement!);
   }
 
   if (!document.querySelector("msw-devtools")) {
