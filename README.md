@@ -1,6 +1,6 @@
-# Vue MSW DevTools
+# MSW DevTools
 
-A powerful browser-based UI for managing [Mock Service Worker (MSW)](https://mswjs.io/) handlers in Vue 3 applications. This library allows you to dynamically switch between different response scenarios, override responses on the fly, and inspect network activity handled by MSW.
+A powerful browser-based UI for managing [Mock Service Worker (MSW)](https://mswjs.io/) handlers. Framework-agnostic. Dynamically switch between response scenarios, override responses on the fly, and inspect network activity handled by MSW.
 
 ## Features
 
@@ -19,9 +19,9 @@ A powerful browser-based UI for managing [Mock Service Worker (MSW)](https://msw
 ## Installation
 
 ```bash
-npm install @ajperezbau/vue-msw-devtools
+npm install @ajperezbau/msw-devtools
 # or
-pnpm add @ajperezbau/vue-msw-devtools
+pnpm add @ajperezbau/msw-devtools
 ```
 
 ## Setup
@@ -31,27 +31,21 @@ pnpm add @ajperezbau/vue-msw-devtools
 You can integrate the devtools with a single line in your application entry point:
 
 ```typescript
-import { createApp } from "vue";
 import { setupWorker } from "msw/browser";
-import { MswDevtoolsPlugin } from "@ajperezbau/vue-msw-devtools";
-import App from "./App.vue";
-
-const app = createApp(App);
+import { initMswDevtools } from "@ajperezbau/msw-devtools";
 
 // 1. Setup MSW as usual
 const worker = setupWorker();
 await worker.start();
 
-// 2. Install the plugin — worker is required
+// 2. Initialize the devtools — worker is required
 if (process.env.NODE_ENV === "development") {
-  app.use(MswDevtoolsPlugin, {
+  initMswDevtools({
     worker, // required
     // Optional: useful to modify the URLs as needed
     urlResolver: (url) => new URL(url, "https://some-base-url").toString(),
   });
 }
-
-app.mount("#app");
 ```
 
 ### Zero Config Discovery
@@ -69,7 +63,7 @@ No changes are needed to your existing MSW code beyond the initial setup!
 Use `defineHandlers` to create handlers with multiple scenarios, then pass them to your MSW worker.
 
 ```typescript
-import { defineHandlers } from "@ajperezbau/vue-msw-devtools";
+import { defineHandlers } from "@ajperezbau/msw-devtools";
 import { setupWorker } from "msw/browser";
 import { HttpResponse } from "msw";
 
@@ -132,7 +126,7 @@ Sometimes you want to set the state of multiple handlers at once to replicate a 
 Use `definePresets` to register predefined configurations.
 
 ```typescript
-import { definePresets } from "@ajperezbau/vue-msw-devtools";
+import { definePresets } from "@ajperezbau/msw-devtools";
 
 definePresets([
   {

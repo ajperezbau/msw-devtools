@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      vue:
+        specifier: ^3.2.0
+        version: 3.5.24(typescript@5.9.3)
     devDependencies:
       '@playwright/test':
         specifier: 1.58.0
@@ -29,15 +33,9 @@ importers:
       vite:
         specifier: 7.2.4
         version: 7.2.4(@types/node@24.10.1)
-      vite-plugin-css-injected-by-js:
-        specifier: 3.5.2
-        version: 3.5.2(vite@7.2.4(@types/node@24.10.1))
       vite-plugin-dts:
         specifier: 4.5.4
         version: 4.5.4(@types/node@24.10.1)(rollup@4.56.0)(typescript@5.9.3)(vite@7.2.4(@types/node@24.10.1))
-      vue:
-        specifier: 3.5.24
-        version: 3.5.24(typescript@5.9.3)
       vue-tsc:
         specifier: 3.1.4
         version: 3.1.4(typescript@5.9.3)
@@ -991,11 +989,6 @@ packages:
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
-  vite-plugin-css-injected-by-js@3.5.2:
-    resolution: {integrity: sha512-2MpU/Y+SCZyWUB6ua3HbJCrgnF0KACAsmzOQt1UvRVJCGF6S8xdA3ZUhWcWdM9ivG4I5az8PnQmwwrkC2CAQrQ==}
-    peerDependencies:
-      vite: '>2.0.0-0'
-
   vite-plugin-dts@4.5.4:
     resolution: {integrity: sha512-d4sOM8M/8z7vRXHHq/ebbblfaxENjogAAekcfcDCCwAyvGqnPrc7f4NZbvItS+g4WTgerW0xDwSz5qz11JT3vg==}
     peerDependencies:
@@ -1942,10 +1935,6 @@ snapshots:
   uri-js@4.4.1:
     dependencies:
       punycode: 2.3.1
-
-  vite-plugin-css-injected-by-js@3.5.2(vite@7.2.4(@types/node@24.10.1)):
-    dependencies:
-      vite: 7.2.4(@types/node@24.10.1)
 
   vite-plugin-dts@4.5.4(@types/node@24.10.1)(rollup@4.56.0)(typescript@5.9.3)(vite@7.2.4(@types/node@24.10.1)):
     dependencies:

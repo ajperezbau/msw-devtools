@@ -1,5 +1,5 @@
 import { createApp, h } from "vue";
-import { MswDevtoolsPlugin, defineHandlers } from "./index";
+import { initMswDevtools, defineHandlers } from "./index";
 import { setupWorker } from "msw/browser";
 import { http, HttpResponse } from "msw";
 
@@ -51,5 +51,5 @@ const worker = setupWorker(
 );
 await worker.start();
 
-app.use(MswDevtoolsPlugin, { worker });
+initMswDevtools({ worker });
 app.mount("#app");
