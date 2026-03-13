@@ -28,13 +28,3 @@ export function initMswDevtools(options: MswDevtoolsOptions): void {
     document.body.appendChild(document.createElement("msw-devtools"));
   }
 }
-
-export const MswDevtoolsPlugin = {
-  install(_: any, options: MswDevtoolsOptions) {
-    console.warn(
-      "⚠️ DEPRECATION WARNING: '@ajperezbau/vue-msw-devtools' has been renamed to '@ajperezbau/msw-devtools'. " +
-        "Please update your dependencies. The new package is framework-agnostic and works the same.",
-    );
-    initMswDevtools(options);
-  },
-};
