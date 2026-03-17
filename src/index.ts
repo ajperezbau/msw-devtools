@@ -53,5 +53,10 @@ export const MswDevtoolsPlugin: Plugin<MswDevtoolsOptions> = {
     } else {
       devtoolsApp.mount(container);
     }
+
+    console.warn(
+      `[MswDevtoolsPlugin] This plugin is deprecated. Use @ajperezbau/msw-devtools (https://www.npmjs.com/package/@ajperezbau/msw-devtools) instead.
+The new package is framework-agnostic and works exactly the same as this one.`,
+    );
   },
 };
