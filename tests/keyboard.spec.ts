@@ -72,6 +72,29 @@ test.describe("Keyboard Navigation", () => {
     await expect(devToolsPage.searchInput).toHaveValue("abc");
   });
 
+  test("search inputs are focused when entering registry and activity log views", async () => {
+    await expect(devToolsPage.searchInput).toBeFocused();
+
+    await devToolsPage.switchTab("Activity Log");
+    await expect(devToolsPage.activityLogSearchInput).toBeFocused();
+
+    await devToolsPage.switchTab("Registry");
+    await expect(devToolsPage.searchInput).toBeFocused();
+  });
+
+  test("programmatic view switches focus the destination search input", async ({
+    page,
+  }) => {
+    await page.evaluate(() => fetch("/api/users").then(() => undefined));
+
+    await devToolsPage.openLogForHandler("users");
+    await expect(devToolsPage.activityLogSearchInput).toBeFocused();
+
+    await devToolsPage.selectLogEntry("users");
+    await devToolsPage.viewSelectedLogInRegistry();
+    await expect(devToolsPage.searchInput).toBeFocused();
+  });
+
   test("ESC key should close Override Modal but keep DevTools open", async ({
     page,
   }) => {

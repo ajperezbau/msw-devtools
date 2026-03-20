@@ -52,6 +52,7 @@
         <div class="search-wrapper">
           <MswInput
             v-model="searchQuery"
+            autofocus
             placeholder="Filter requests..."
             class="search-input"
           />

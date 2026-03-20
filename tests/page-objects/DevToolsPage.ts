@@ -7,6 +7,7 @@ export class DevToolsPage {
   readonly closeButton: Locator;
   readonly registryTable: Locator;
   readonly searchInput: Locator;
+  readonly activityLogSearchInput: Locator;
   readonly globalDelayInput: Locator;
   readonly globalDelayNumberInput: Locator;
   readonly exportButton: Locator;
@@ -24,6 +25,9 @@ export class DevToolsPage {
     this.registryTable = this.dialog.getByRole("table");
     this.searchInput = this.dialog.getByPlaceholder(
       "Filter by key, URL or method...",
+    );
+    this.activityLogSearchInput = this.dialog.getByPlaceholder(
+      "Filter requests...",
     );
     this.globalDelayInput = this.dialog.getByLabel(/Global Delay:/);
     this.globalDelayNumberInput = this.dialog.getByLabel(
@@ -253,8 +257,7 @@ export class DevToolsPage {
   }
 
   async searchActivityLog(query: string) {
-    const searchInput = this.dialog.getByPlaceholder("Filter requests...");
-    await searchInput.fill(query);
+    await this.activityLogSearchInput.fill(query);
   }
 
   async clearActivityLogSearch() {
@@ -373,6 +376,15 @@ export class DevToolsPage {
   async openOverrideModal(handlerName: string) {
     const row = await this.getHandlerRow(handlerName);
     await row.getByRole("button", { name: /Override/i }).click();
+  }
+
+  async openLogForHandler(handlerName: string) {
+    const row = await this.getHandlerRow(handlerName);
+    await row.getByTitle("View logs for this handler").click();
+  }
+
+  async viewSelectedLogInRegistry() {
+    await this.dialog.getByRole("button", { name: /View in Registry/i }).click();
   }
 
   async fillOverrideBody(body: string) {

@@ -4,6 +4,7 @@
       <MswInput
         v-model="searchQuery"
         type="text"
+        autofocus
         placeholder="Filter by key, URL or method..."
         class="search-input"
       />
