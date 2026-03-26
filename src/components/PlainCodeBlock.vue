@@ -35,7 +35,6 @@ pre {
   line-height: 1.5;
   background: var(--bg-secondary);
   color: var(--text-main);
-  flex: 1;
 }
 
 code {

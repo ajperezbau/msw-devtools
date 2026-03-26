@@ -77,10 +77,8 @@ const copyContent = async () => {
   border: 1px solid var(--border-color);
   overflow: hidden;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  display: block;
+  width: 100%;
 }
 
 .code-header {
