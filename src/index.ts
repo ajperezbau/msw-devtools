@@ -18,7 +18,10 @@ export function initMswDevtools(options: MswDevtoolsOptions): void {
     return;
   }
 
-  setupMswRegistry(options.worker, options.urlResolver);
+  setupMswRegistry(options.worker, options.urlResolver, {
+    initialScenarioMode: options.initialScenarioMode,
+    persistence: options.persistence,
+  });
 
   if (!MswDevtoolsElement) {
     MswDevtoolsElement = defineCustomElement(MswDevtools);

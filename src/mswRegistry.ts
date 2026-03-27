@@ -14,6 +14,11 @@ import type {
   CustomScenario,
   HandlerMetadata,
   LogEntry,
+  MswDevtoolsInitialScenarioMode,
+  MswDevtoolsPersistenceConfig,
+  MswDevtoolsPersistence,
+  MswDevtoolsStorageMode,
+  MswDevtoolsOptions,
   Preset,
 } from "./types";
 
@@ -30,11 +35,131 @@ const OVERRIDES_KEY = "msw-overrides";
 const CUSTOM_SCENARIOS_KEY = "msw-custom-scenarios";
 const CUSTOM_PRESETS_KEY = "msw-custom-presets";
 
+export const USER_PREFERENCE_KEYS = {
+  theme: "msw-devtools-theme",
+  toggleX: "msw-devtools-x",
+  toggleY: "msw-devtools-y",
+  registryFilter: "msw-scenarios-filter",
+  showOnlyModified: "msw-show-only-modified",
+} as const;
+
+export const RUNTIME_STATE_KEYS = {
+  scenarios: STORAGE_KEY,
+  globalDelay: DELAY_KEY,
+  handlerDelays: HANDLER_DELAY_KEY,
+  overrides: OVERRIDES_KEY,
+  passthroughSnapshot: "msw-passthrough-snapshot",
+} as const;
+
+export const AUTHORED_DATA_KEYS = {
+  customScenarios: CUSTOM_SCENARIOS_KEY,
+  customPresets: CUSTOM_PRESETS_KEY,
+} as const;
+
+export type MswDevtoolsPersistenceBucket =
+  keyof Required<MswDevtoolsPersistenceConfig>;
+
+const DEFAULT_PERSISTENCE_CONFIG: Required<MswDevtoolsPersistenceConfig> = {
+  runtimeState: "local",
+  userPreferences: "local",
+  authoredData: "local",
+};
+
+const PERSISTED_CONFIG_KEYS: Array<{
+  bucket: MswDevtoolsPersistenceBucket;
+  key: string;
+}> = [
+  { bucket: "runtimeState", key: STORAGE_KEY },
+  { bucket: "runtimeState", key: DELAY_KEY },
+  { bucket: "runtimeState", key: HANDLER_DELAY_KEY },
+  { bucket: "runtimeState", key: OVERRIDES_KEY },
+  { bucket: "authoredData", key: CUSTOM_SCENARIOS_KEY },
+  { bucket: "authoredData", key: CUSTOM_PRESETS_KEY },
+  { bucket: "runtimeState", key: RUNTIME_STATE_KEYS.passthroughSnapshot },
+];
+
+type PersistenceStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+
+const noopStorage: PersistenceStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
+
+let initialScenarioMode: MswDevtoolsInitialScenarioMode = "handler-default";
+let resolvedPersistenceConfig: Required<MswDevtoolsPersistenceConfig> = {
+  ...DEFAULT_PERSISTENCE_CONFIG,
+};
+
+const isStorageMode = (
+  value: string | null | undefined,
+): value is MswDevtoolsStorageMode => {
+  return value === "local" || value === "session" || value === "none";
+};
+
+const normalizePersistenceConfig = (
+  persistence?: MswDevtoolsPersistence,
+): Required<MswDevtoolsPersistenceConfig> => {
+  if (!persistence) return { ...DEFAULT_PERSISTENCE_CONFIG };
+
+  if (typeof persistence === "string") {
+    return {
+      runtimeState: persistence,
+      userPreferences: persistence,
+      authoredData: persistence,
+    };
+  }
+
+  return {
+    ...DEFAULT_PERSISTENCE_CONFIG,
+    ...Object.fromEntries(
+      Object.entries(persistence).filter(([, value]) => isStorageMode(value)),
+    ),
+  };
+};
+
+const getStorageForMode = (
+  mode: MswDevtoolsStorageMode,
+): PersistenceStorage => {
+  if (typeof window === "undefined") return noopStorage;
+  if (mode === "session") return window.sessionStorage;
+  if (mode === "none") return noopStorage;
+  return window.localStorage;
+};
+
+const getPersistenceStorage = (
+  bucket: MswDevtoolsPersistenceBucket,
+): PersistenceStorage => {
+  return getStorageForMode(resolvedPersistenceConfig[bucket]);
+};
+
+const readPersistedJson = <T>(
+  bucket: MswDevtoolsPersistenceBucket,
+  key: string,
+  fallback: T,
+): T => {
+  try {
+    const stored = getPersistenceStorage(bucket).getItem(key);
+    return stored ? (JSON.parse(stored) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const writePersistedJson = (
+  bucket: MswDevtoolsPersistenceBucket,
+  key: string,
+  value: unknown,
+) => {
+  getPersistenceStorage(bucket).setItem(key, JSON.stringify(value));
+};
+
 // Normalize legacy storage data on plugin load
 const normalizeStorageData = () => {
   try {
     // Normalize scenarios
-    const storedScenarios = localStorage.getItem(STORAGE_KEY);
+    const runtimeStorage = getPersistenceStorage("runtimeState");
+    const storedScenarios = runtimeStorage.getItem(STORAGE_KEY);
     if (storedScenarios) {
       const scenarios = JSON.parse(storedScenarios);
       let hasChanges = false;
@@ -48,12 +173,13 @@ const normalizeStorageData = () => {
         }
       }
       if (hasChanges) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+        runtimeStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
       }
     }
 
     // Normalize presets
-    const storedPresets = localStorage.getItem(CUSTOM_PRESETS_KEY);
+    const authoredDataStorage = getPersistenceStorage("authoredData");
+    const storedPresets = authoredDataStorage.getItem(CUSTOM_PRESETS_KEY);
     if (storedPresets) {
       const presets = JSON.parse(storedPresets) as Array<{
         name: string;
@@ -69,77 +195,48 @@ const normalizeStorageData = () => {
         }
       }
       if (hasChanges) {
-        localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(presets));
+        authoredDataStorage.setItem(
+          CUSTOM_PRESETS_KEY,
+          JSON.stringify(presets),
+        );
       }
     }
   } catch {
     // Ignore errors on normalization
   }
 };
-normalizeStorageData();
 
 const getPersistedScenarios = (): Record<string, string> => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
+  return readPersistedJson("runtimeState", STORAGE_KEY, {});
 };
 
 const getPersistedHandlerDelays = (): Record<string, number> => {
-  try {
-    const stored = localStorage.getItem(HANDLER_DELAY_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
+  return readPersistedJson("runtimeState", HANDLER_DELAY_KEY, {});
 };
 
 const getPersistedOverrides = (): Record<string, CustomOverride> => {
-  try {
-    const stored = localStorage.getItem(OVERRIDES_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
+  return readPersistedJson("runtimeState", OVERRIDES_KEY, {});
 };
 
 const getPersistedCustomScenarios = (): Record<
   string,
   Record<string, CustomScenario>
 > => {
-  try {
-    const stored = localStorage.getItem(CUSTOM_SCENARIOS_KEY);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
+  return readPersistedJson("authoredData", CUSTOM_SCENARIOS_KEY, {});
 };
 
 const getPersistedCustomPresets = (): Preset[] => {
-  try {
-    const stored = localStorage.getItem(CUSTOM_PRESETS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
+  return readPersistedJson("authoredData", CUSTOM_PRESETS_KEY, []);
 };
 
-export const scenarioState = reactive<Record<string, string>>(
-  getPersistedScenarios(),
-);
-export const handlerDelays = reactive<Record<string, number>>(
-  getPersistedHandlerDelays(),
-);
-export const customOverrides = reactive<Record<string, CustomOverride>>(
-  getPersistedOverrides(),
-);
+export const scenarioState = reactive<Record<string, string>>({});
+export const handlerDelays = reactive<Record<string, number>>({});
+export const customOverrides = reactive<Record<string, CustomOverride>>({});
 export const customScenarios = reactive<
   Record<string, Record<string, CustomScenario>>
->(getPersistedCustomScenarios());
-export const customPresets = reactive<Preset[]>(getPersistedCustomPresets());
-export const globalDelay = ref(Number(localStorage.getItem(DELAY_KEY)) || 0);
+>({});
+export const customPresets = reactive<Preset[]>([]);
+export const globalDelay = ref(0);
 export const recordPassthrough = ref(false);
 
 export const scenarioRegistry = reactive<Record<string, HandlerMetadata>>({});
@@ -161,6 +258,33 @@ let mswInstance: { resetHandlers: (...handlers: any[]) => void } | null = null;
 const registeredHandlers: RegisteredHandler[] = [];
 let baseHandlers: any[] = [];
 let urlResolver: (url: string) => string = (url) => url;
+
+const syncReactiveRecord = <T extends Record<string, unknown>>(
+  target: T,
+  nextState: T,
+) => {
+  Object.keys(target).forEach((key) => {
+    delete target[key as keyof T];
+  });
+  Object.assign(target, nextState);
+};
+
+const hydratePersistedState = () => {
+  normalizeStorageData();
+  syncReactiveRecord(scenarioState, getPersistedScenarios());
+  syncReactiveRecord(handlerDelays, getPersistedHandlerDelays());
+  syncReactiveRecord(customOverrides, getPersistedOverrides());
+  syncReactiveRecord(customScenarios, getPersistedCustomScenarios());
+
+  const persistedPresets = getPersistedCustomPresets();
+  customPresets.splice(0, customPresets.length, ...persistedPresets);
+
+  const storedDelay = getPersistenceStorage("runtimeState").getItem(DELAY_KEY);
+  globalDelay.value = storedDelay ? Number(storedDelay) || 0 : 0;
+};
+
+const resolveInitialScenario = (defaultScenario: string) =>
+  initialScenarioMode === "passthrough" ? "passthrough" : defaultScenario;
 
 const BUILT_IN_SCENARIOS: Record<string, HttpResponseResolver> = {
   passthrough: () => passthrough(),
@@ -214,12 +338,15 @@ const registerInternal = (config: {
   }
 
   const originalScenarios = Object.keys(scenarios);
+  const initialScenario = resolveInitialScenario(effectiveDefault);
 
   // Register metadata
   scenarioRegistry[key] = {
     url,
     method: method.toUpperCase(),
     isNative,
+    defaultScenario: effectiveDefault,
+    initialScenario,
     originalScenarios,
     scenarios: [
       ...originalScenarios,
@@ -237,7 +364,7 @@ const registerInternal = (config: {
     // Already normalized in normalizeStorageData()
     scenarioState[key] = scenarioState[key];
   } else {
-    scenarioState[key] = effectiveDefault;
+    scenarioState[key] = initialScenario;
   }
 
   // Initialize delay if missing
@@ -266,7 +393,7 @@ const registerInternal = (config: {
 
       const currentUrlParams = new URLSearchParams(window.location.search);
       const activeScenarioKey =
-        currentUrlParams.get(key) || scenarioState[key] || effectiveDefault;
+        currentUrlParams.get(key) || scenarioState[key] || initialScenario;
 
       const override = customOverrides[key];
 
@@ -489,7 +616,12 @@ const registerInternal = (config: {
 export const setupMswRegistry = (
   instance: any,
   resolver?: (url: string) => string,
+  options?: Pick<MswDevtoolsOptions, "initialScenarioMode" | "persistence">,
 ) => {
+  initialScenarioMode = options?.initialScenarioMode ?? "handler-default";
+  resolvedPersistenceConfig = normalizePersistenceConfig(options?.persistence);
+  hydratePersistedState();
+
   mswInstance = instance;
   if (resolver) urlResolver = resolver;
 
@@ -608,11 +740,11 @@ export const applyPreset = (presetName: string) => {
   }
 };
 
-// Persistir cambios en localStorage
+// Persist persisted state using the configured storage bucket for each data type
 watch(
   scenarioState,
   (newState) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+    writePersistedJson("runtimeState", STORAGE_KEY, newState);
   },
   { deep: true },
 );
@@ -620,7 +752,7 @@ watch(
 watch(
   handlerDelays,
   (newDelays) => {
-    localStorage.setItem(HANDLER_DELAY_KEY, JSON.stringify(newDelays));
+    writePersistedJson("runtimeState", HANDLER_DELAY_KEY, newDelays);
   },
   { deep: true },
 );
@@ -628,7 +760,7 @@ watch(
 watch(
   customOverrides,
   (newOverrides) => {
-    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(newOverrides));
+    writePersistedJson("runtimeState", OVERRIDES_KEY, newOverrides);
   },
   { deep: true },
 );
@@ -636,7 +768,7 @@ watch(
 watch(
   customScenarios,
   (newScenarios) => {
-    localStorage.setItem(CUSTOM_SCENARIOS_KEY, JSON.stringify(newScenarios));
+    writePersistedJson("authoredData", CUSTOM_SCENARIOS_KEY, newScenarios);
   },
   { deep: true },
 );
@@ -644,14 +776,46 @@ watch(
 watch(
   customPresets,
   (newPresets) => {
-    localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(newPresets));
+    writePersistedJson("authoredData", CUSTOM_PRESETS_KEY, newPresets);
   },
   { deep: true },
 );
 
 watch(globalDelay, (newDelay) => {
-  localStorage.setItem(DELAY_KEY, String(newDelay));
+  getPersistenceStorage("runtimeState").setItem(DELAY_KEY, String(newDelay));
 });
+
+export const getInitialScenarioValue = (key: string) => {
+  return scenarioRegistry[key]?.initialScenario || "default";
+};
+
+export const readPersistenceItem = (
+  bucket: MswDevtoolsPersistenceBucket,
+  key: string,
+) => {
+  return getPersistenceStorage(bucket).getItem(key);
+};
+
+export const writePersistenceItem = (
+  bucket: MswDevtoolsPersistenceBucket,
+  key: string,
+  value: string,
+) => {
+  getPersistenceStorage(bucket).setItem(key, value);
+};
+
+export const removePersistenceItem = (
+  bucket: MswDevtoolsPersistenceBucket,
+  key: string,
+) => {
+  getPersistenceStorage(bucket).removeItem(key);
+};
+
+export const clearPersistedConfig = () => {
+  PERSISTED_CONFIG_KEYS.forEach(({ bucket, key }) => {
+    getPersistenceStorage(bucket).removeItem(key);
+  });
+};
 
 /**
  * Define MSW handlers with multiple scenarios for the devtools.

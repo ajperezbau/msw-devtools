@@ -26,9 +26,8 @@ export class DevToolsPage {
     this.searchInput = this.dialog.getByPlaceholder(
       "Filter by key, URL or method...",
     );
-    this.activityLogSearchInput = this.dialog.getByPlaceholder(
-      "Filter requests...",
-    );
+    this.activityLogSearchInput =
+      this.dialog.getByPlaceholder("Filter requests...");
     this.globalDelayInput = this.dialog.getByLabel(/Global Delay:/);
     this.globalDelayNumberInput = this.dialog.getByLabel(
       "Global delay in milliseconds",
@@ -93,8 +92,8 @@ export class DevToolsPage {
     await this.searchInput.fill("");
   }
 
-  async goto() {
-    await this.page.goto("/");
+  async goto(path = "/") {
+    await this.page.goto(path);
   }
 
   async toggle() {
@@ -384,7 +383,9 @@ export class DevToolsPage {
   }
 
   async viewSelectedLogInRegistry() {
-    await this.dialog.getByRole("button", { name: /View in Registry/i }).click();
+    await this.dialog
+      .getByRole("button", { name: /View in Registry/i })
+      .click();
   }
 
   async fillOverrideBody(body: string) {

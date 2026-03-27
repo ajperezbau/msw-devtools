@@ -2,6 +2,10 @@ import { createApp, h } from "vue";
 import { initMswDevtools, defineHandlers } from "./index";
 import { setupWorker } from "msw/browser";
 import { http, HttpResponse } from "msw";
+import type {
+  MswDevtoolsPersistenceConfig,
+  MswDevtoolsStorageMode,
+} from "./types";
 
 const app = createApp({
   render: () => h("div", "MSW Devtools Test Environment"),
@@ -51,5 +55,38 @@ const worker = setupWorker(
 );
 await worker.start();
 
-initMswDevtools({ worker });
+const params = new URLSearchParams(window.location.search);
+const initialScenarioMode = params.get("initialScenarioMode");
+const persistence = params.get("persistence");
+const runtimeState = params.get("runtimeState");
+const userPreferences = params.get("userPreferences");
+const authoredData = params.get("authoredData");
+
+const isStorageMode = (
+  value: string | null,
+): value is MswDevtoolsStorageMode => {
+  return value === "local" || value === "session" || value === "none";
+};
+
+const bucketPersistence: MswDevtoolsPersistenceConfig = {
+  ...(isStorageMode(runtimeState) ? { runtimeState } : {}),
+  ...(isStorageMode(userPreferences) ? { userPreferences } : {}),
+  ...(isStorageMode(authoredData) ? { authoredData } : {}),
+};
+
+const resolvedPersistence =
+  Object.keys(bucketPersistence).length > 0
+    ? bucketPersistence
+    : isStorageMode(persistence)
+      ? persistence
+      : undefined;
+
+initMswDevtools({
+  worker,
+  ...(initialScenarioMode === "handler-default" ||
+  initialScenarioMode === "passthrough"
+    ? { initialScenarioMode }
+    : {}),
+  ...(resolvedPersistence ? { persistence: resolvedPersistence } : {}),
+});
 app.mount("#app");
