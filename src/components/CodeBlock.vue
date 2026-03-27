@@ -16,6 +16,7 @@
       </div>
     </div>
     <component
+      class="code-body"
       :is="rendererComponent"
       :code="props.code"
       :language="props.language"
@@ -77,8 +78,15 @@ const copyContent = async () => {
   border: 1px solid var(--border-color);
   overflow: hidden;
   margin: 0;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   width: 100%;
+}
+
+.code-body {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .code-header {
@@ -88,6 +96,7 @@ const copyContent = async () => {
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-tertiary);
+  flex-shrink: 0;
 }
 
 .code-label {

@@ -27,6 +27,7 @@ const displayCode = computed(() => normalizePlainCode(props.code));
 
 <style scoped>
 pre {
+  box-sizing: border-box;
   margin: 0;
   padding: 1rem;
   overflow-x: auto;
