@@ -15,17 +15,22 @@
         </button>
       </div>
     </div>
-    <pre
-      :style="{
-        maxHeight: props.maxHeight,
-        overflowY: props.maxHeight ? 'auto' : undefined,
-      }"
-    ><code :class="language">{{ displayCode }}</code></pre>
+    <component
+      class="code-body"
+      :is="rendererComponent"
+      :code="props.code"
+      :language="props.language"
+      :max-height="props.maxHeight"
+      :enable-highlight="props.enableHighlight"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, ref } from "vue";
+import JsonCodeBlock from "./JsonCodeBlock.vue";
+import PlainCodeBlock from "./PlainCodeBlock.vue";
+import { normalizeCodeForLanguage } from "./codeBlockUtils";
 
 const props = withDefaults(
   defineProps<{
@@ -34,71 +39,28 @@ const props = withDefaults(
     label?: string;
     copyButton?: boolean;
     maxHeight?: string;
+    enableHighlight?: boolean;
   }>(),
   {
     language: "json",
     copyButton: true,
+    enableHighlight: true,
   },
 );
 
 const isCopied = ref(false);
-const displayCode = ref("");
 
-const updateCodeDisplay = () => {
-  let rawCode = "";
+const rendererComponent = computed(() =>
+  props.language === "json" ? JsonCodeBlock : PlainCodeBlock,
+);
 
-  if (props.code === undefined || props.code === null) {
-    displayCode.value = "";
-    return;
-  }
-
-  if (typeof props.code === "string") {
-    try {
-      if (props.language === "json") {
-        const parsed = JSON.parse(props.code);
-        rawCode = JSON.stringify(parsed, null, 2);
-      } else {
-        rawCode = props.code;
-      }
-    } catch {
-      rawCode = props.code;
-    }
-  } else {
-    rawCode = JSON.stringify(props.code, null, 2);
-  }
-
-  displayCode.value = rawCode;
-};
-
-onMounted(() => {
-  updateCodeDisplay();
-});
-
-watch(
-  () => [props.code, props.language],
-  () => {
-    updateCodeDisplay();
-  },
+const normalizedCopyText = computed(() =>
+  normalizeCodeForLanguage(props.code, props.language),
 );
 
 const copyContent = async () => {
   try {
-    let textToCopy = "";
-    if (typeof props.code === "object") {
-      textToCopy = JSON.stringify(props.code, null, 2);
-    } else {
-      try {
-        if (props.language === "json") {
-          textToCopy = JSON.stringify(JSON.parse(props.code || ""), null, 2);
-        } else {
-          textToCopy = props.code || "";
-        }
-      } catch {
-        textToCopy = props.code || "";
-      }
-    }
-
-    await navigator.clipboard.writeText(textToCopy);
+    await navigator.clipboard.writeText(normalizedCopyText.value);
     isCopied.value = true;
     setTimeout(() => {
       isCopied.value = false;
@@ -118,7 +80,12 @@ const copyContent = async () => {
   margin: 0;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.code-body {
+  flex: 1 1 auto;
   min-height: 0;
 }
 
@@ -129,6 +96,7 @@ const copyContent = async () => {
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-tertiary);
+  flex-shrink: 0;
 }
 
 .code-label {
@@ -164,22 +132,5 @@ const copyContent = async () => {
   background: #10b981;
   color: white;
   border-color: #10b981;
-}
-
-pre {
-  margin: 0;
-  padding: 1rem;
-  overflow-x: auto;
-  font-family: "JetBrains Mono", "Fira Code", monospace;
-  font-size: 0.8rem;
-  line-height: 1.5;
-  background: var(--bg-secondary);
-  color: var(--text-main);
-  flex: 1;
-}
-
-code {
-  background: transparent !important;
-  padding: 0 !important;
 }
 </style>
