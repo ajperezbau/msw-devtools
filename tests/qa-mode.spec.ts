@@ -171,7 +171,7 @@ test.describe("MSW DevTools - QA Mode", () => {
     await page.reload();
     await devToolsPage.expectVisible();
 
-    await page.goto(
+    await devToolsPage.goto(
       "/?initialShowToggle=false&runtimeState=session&userPreferences=local&authoredData=local",
     );
     await devToolsPage.expectVisible();
@@ -189,7 +189,7 @@ test.describe("MSW DevTools - QA Mode", () => {
       })
       .toBe("false");
 
-    await page.goto(
+    await devToolsPage.goto(
       "/?initialShowToggle=true&runtimeState=session&userPreferences=local&authoredData=local",
     );
     await devToolsPage.expectHidden();
