@@ -46,6 +46,8 @@ if (process.env.NODE_ENV === "development") {
     urlResolver: (url) => new URL(url, "https://some-base-url").toString(),
     // Optional: in QA you can start every handler in Real API mode
     initialScenarioMode: "passthrough",
+    // Optional: hide the floating launcher until the user enables it again
+    initialShowToggle: false,
     // Optional: shorthand that applies the same storage mode to everything
     persistence: "session",
   });
@@ -65,6 +67,7 @@ Recommended QA setup:
 initMswDevtools({
   worker,
   initialScenarioMode: "passthrough",
+  initialShowToggle: false,
   persistence: {
     runtimeState: "session",
     userPreferences: "local",
@@ -74,6 +77,7 @@ initMswDevtools({
 ```
 
 This keeps the tool available for everyone while making Real API mode the default baseline, and still preserves changes across page reloads during the current browser session.
+If the user knows the keyboard shortcut, they can still open the panel and re-enable the floating launcher from inside the devtools.
 
 ### Persistence Buckets
 
@@ -98,8 +102,28 @@ initMswDevtools({
 ```
 
 - `runtimeState`: active scenarios, delays, overrides, global passthrough snapshot.
-- `userPreferences`: theme, floating toggle position, registry filters.
+- `userPreferences`: theme, floating toggle visibility and position, registry filters.
 - `authoredData`: custom scenarios and custom presets.
+
+### Toggle Launcher Visibility
+
+Use `initialShowToggle` when you want the keyboard shortcut to be the only entry point on first load:
+
+```typescript
+initMswDevtools({
+  worker,
+  initialShowToggle: false,
+  persistence: {
+    runtimeState: "session",
+    userPreferences: "local",
+    authoredData: "local",
+  },
+});
+```
+
+- `initialShowToggle` only defines the initial recommendation.
+- If the user changes the launcher visibility from inside the panel, that preference is stored in `userPreferences` and takes precedence on later loads.
+- The keyboard shortcut remains available even when the floating launcher is hidden.
 
 If you pass a string, the same storage mode is used for all buckets. If you pass an object, any omitted bucket falls back to `local`.
 

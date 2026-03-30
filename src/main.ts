@@ -57,6 +57,7 @@ await worker.start();
 
 const params = new URLSearchParams(window.location.search);
 const initialScenarioMode = params.get("initialScenarioMode");
+const initialShowToggle = params.get("initialShowToggle");
 const persistence = params.get("persistence");
 const runtimeState = params.get("runtimeState");
 const userPreferences = params.get("userPreferences");
@@ -86,6 +87,9 @@ initMswDevtools({
   ...(initialScenarioMode === "handler-default" ||
   initialScenarioMode === "passthrough"
     ? { initialScenarioMode }
+    : {}),
+  ...(initialShowToggle === "true" || initialShowToggle === "false"
+    ? { initialShowToggle: initialShowToggle === "true" }
     : {}),
   ...(resolvedPersistence ? { persistence: resolvedPersistence } : {}),
 });

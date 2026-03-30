@@ -1,6 +1,6 @@
 {
   "name": "@ajperezbau/msw-devtools",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A powerful browser-based UI for managing Mock Service Worker (MSW) handlers. Framework-agnostic — works with Vue, React, Svelte, and Vanilla JS.",
   "type": "module",
   "author": "ajperezbau",
