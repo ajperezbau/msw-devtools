@@ -145,6 +145,9 @@
             :title="
               theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'
             "
+            :aria-label="
+              theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'
+            "
           >
             <svg
               v-if="theme === 'light'"
@@ -388,15 +391,22 @@ import OverrideEditor from "./components/OverrideEditor.vue";
 import PresetsView from "./components/PresetsView.vue";
 import RegistryView from "./components/RegistryView.vue";
 import {
+  RUNTIME_STATE_KEYS,
+  USER_PREFERENCE_KEYS,
   activityLog,
+  clearPersistedConfig,
   customOverrides,
   customPresets,
   customScenarios,
+  getInitialScenarioValue,
   globalDelay,
   handlerDelays,
+  readPersistenceItem,
   recordPassthrough,
+  removePersistenceItem,
   scenarioRegistry,
   scenarioState,
+  writePersistenceItem,
 } from "./mswRegistry";
 import type { ExportOptions, LogEntry } from "./types";
 
@@ -406,21 +416,34 @@ const registryViewRef = ref<any>(null);
 const resetMenuContainer = ref<HTMLElement | null>(null);
 
 const theme = ref<"light" | "dark">(
-  (localStorage.getItem("msw-devtools-theme") as "light" | "dark") || "dark",
+  (readPersistenceItem("userPreferences", USER_PREFERENCE_KEYS.theme) as
+    | "light"
+    | "dark") || "dark",
 );
 
-const PASSTHROUGH_SNAPSHOT_KEY = "msw-passthrough-snapshot";
 const passthroughSnapshot = ref<Record<string, string> | null>(
-  JSON.parse(localStorage.getItem(PASSTHROUGH_SNAPSHOT_KEY) || "null"),
+  JSON.parse(
+    readPersistenceItem(
+      "runtimeState",
+      RUNTIME_STATE_KEYS.passthroughSnapshot,
+    ) || "null",
+  ),
 );
 
 watch(
   passthroughSnapshot,
   (newVal) => {
     if (newVal) {
-      localStorage.setItem(PASSTHROUGH_SNAPSHOT_KEY, JSON.stringify(newVal));
+      writePersistenceItem(
+        "runtimeState",
+        RUNTIME_STATE_KEYS.passthroughSnapshot,
+        JSON.stringify(newVal),
+      );
     } else {
-      localStorage.removeItem(PASSTHROUGH_SNAPSHOT_KEY);
+      removePersistenceItem(
+        "runtimeState",
+        RUNTIME_STATE_KEYS.passthroughSnapshot,
+      );
     }
   },
   { deep: true },
@@ -445,7 +468,9 @@ const toggleGlobalPassthrough = () => {
     const snapshot = passthroughSnapshot.value;
     keys.forEach((key) => {
       scenarioState[key] =
-        snapshot && snapshot[key] ? snapshot[key] : "default";
+        snapshot && snapshot[key]
+          ? snapshot[key]
+          : getInitialScenarioValue(key);
     });
     passthroughSnapshot.value = null; // Limpiar snapshot
     recordPassthrough.value = false; // Apagar la grabación efímera
@@ -476,7 +501,11 @@ const exportOptions = ref<ExportOptions>({
 
 const toggleTheme = () => {
   theme.value = theme.value === "light" ? "dark" : "light";
-  localStorage.setItem("msw-devtools-theme", theme.value);
+  writePersistenceItem(
+    "userPreferences",
+    USER_PREFERENCE_KEYS.theme,
+    theme.value,
+  );
 };
 
 const logFilterKey = ref<string | null>(null);
@@ -573,7 +602,7 @@ const handleOutsideClick = (event: MouseEvent) => {
 
 const resetScenariosOnly = () => {
   Object.keys(scenarioState).forEach((key) => {
-    scenarioState[key] = "default";
+    scenarioState[key] = getInitialScenarioValue(key);
   });
 
   // Also clear overrides as they affects the scenario returned
@@ -594,16 +623,12 @@ const clearConfigs = () => {
     return;
   }
 
-  localStorage.removeItem("msw-scenarios");
-  localStorage.removeItem("msw-delay");
-  localStorage.removeItem("msw-handler-delays");
-  localStorage.removeItem("msw-overrides");
-  localStorage.removeItem("msw-custom-scenarios");
-  localStorage.removeItem("msw-custom-presets");
+  clearPersistedConfig();
+  removePersistenceItem("runtimeState", RUNTIME_STATE_KEYS.passthroughSnapshot);
 
   // Reset all scenarios to their appropriate default in the reactive state
   Object.keys(scenarioState).forEach((key) => {
-    scenarioState[key] = "default";
+    scenarioState[key] = getInitialScenarioValue(key);
   });
 
   // Reset all handler delays to 0

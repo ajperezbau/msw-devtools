@@ -44,9 +44,64 @@ if (process.env.NODE_ENV === "development") {
     worker, // required
     // Optional: useful to modify the URLs as needed
     urlResolver: (url) => new URL(url, "https://some-base-url").toString(),
+    // Optional: in QA you can start every handler in Real API mode
+    initialScenarioMode: "passthrough",
+    // Optional: shorthand that applies the same storage mode to everything
+    persistence: "session",
   });
 }
 ```
+
+### QA-Friendly Defaults
+
+If you want to expose the devtools in a shared QA environment, use the runtime policy options in `initMswDevtools()` instead of changing each handler definition:
+
+- `initialScenarioMode: "handler-default" | "passthrough"` controls the scenario used when there is no URL override and no persisted state.
+- `persistence` accepts either a string shorthand or a bucketed object.
+
+Recommended QA setup:
+
+```typescript
+initMswDevtools({
+  worker,
+  initialScenarioMode: "passthrough",
+  persistence: {
+    runtimeState: "session",
+    userPreferences: "local",
+    authoredData: "local",
+  },
+});
+```
+
+This keeps the tool available for everyone while making Real API mode the default baseline, and still preserves changes across page reloads during the current browser session.
+
+### Persistence Buckets
+
+`persistence` supports two forms:
+
+```typescript
+type StorageMode = "local" | "session" | "none";
+
+initMswDevtools({
+  worker,
+  persistence: "session",
+});
+
+initMswDevtools({
+  worker,
+  persistence: {
+    runtimeState: "session",
+    userPreferences: "local",
+    authoredData: "local",
+  },
+});
+```
+
+- `runtimeState`: active scenarios, delays, overrides, global passthrough snapshot.
+- `userPreferences`: theme, floating toggle position, registry filters.
+- `authoredData`: custom scenarios and custom presets.
+
+If you pass a string, the same storage mode is used for all buckets. If you pass an object, any omitted bucket falls back to `local`.
 
 ### Zero Config Discovery
 

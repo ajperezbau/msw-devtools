@@ -1,5 +1,19 @@
 import type { HttpResponseResolver } from "msw";
 
+export type MswDevtoolsInitialScenarioMode = "handler-default" | "passthrough";
+
+export type MswDevtoolsStorageMode = "local" | "session" | "none";
+
+export interface MswDevtoolsPersistenceConfig {
+  runtimeState?: MswDevtoolsStorageMode;
+  userPreferences?: MswDevtoolsStorageMode;
+  authoredData?: MswDevtoolsStorageMode;
+}
+
+export type MswDevtoolsPersistence =
+  | MswDevtoolsStorageMode
+  | MswDevtoolsPersistenceConfig;
+
 /**
  * Configuration for MSW devtools metadata added to MSW handlers.
  */
@@ -21,6 +35,8 @@ export interface HandlerMetadata {
   method: string;
   scenarios: string[];
   originalScenarios: string[];
+  defaultScenario: string;
+  initialScenario: string;
   isNative?: boolean;
 }
 
@@ -75,6 +91,8 @@ export interface MswDevtoolsOptions {
   /** The MSW `SetupWorkerApi` instance. Required. */
   worker: any;
   urlResolver?: (url: string) => string;
+  initialScenarioMode?: MswDevtoolsInitialScenarioMode;
+  persistence?: MswDevtoolsPersistence;
 }
 
 /**

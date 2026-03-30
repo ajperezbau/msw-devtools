@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
+import {
+  USER_PREFERENCE_KEYS,
+  readPersistenceItem,
+  writePersistenceItem,
+} from "../mswRegistry";
 
-const X_KEY = "msw-devtools-x";
-const Y_KEY = "msw-devtools-y";
+const X_KEY = USER_PREFERENCE_KEYS.toggleX;
+const Y_KEY = USER_PREFERENCE_KEYS.toggleY;
 
 const PADDING = 10;
 const BUTTON_SIZE = 60;
@@ -23,8 +28,14 @@ const hasMoved = ref(false);
 
 const clampToViewport = (x: number, y: number) => {
   return {
-    x: Math.max(PADDING, Math.min(window.innerWidth - BUTTON_SIZE - PADDING, x)),
-    y: Math.max(PADDING, Math.min(window.innerHeight - BUTTON_SIZE - PADDING, y)),
+    x: Math.max(
+      PADDING,
+      Math.min(window.innerWidth - BUTTON_SIZE - PADDING, x),
+    ),
+    y: Math.max(
+      PADDING,
+      Math.min(window.innerHeight - BUTTON_SIZE - PADDING, y),
+    ),
   };
 };
 
@@ -99,8 +110,8 @@ const endDrag = () => {
     position.value = current;
 
     try {
-      localStorage.setItem(X_KEY, String(current.x));
-      localStorage.setItem(Y_KEY, String(current.y));
+      writePersistenceItem("userPreferences", X_KEY, String(current.x));
+      writePersistenceItem("userPreferences", Y_KEY, String(current.y));
     } catch {
       // ignore storage errors
     }
@@ -131,8 +142,8 @@ const handleResize = () => {
 };
 
 onMounted(() => {
-  const savedX = localStorage.getItem(X_KEY);
-  const savedY = localStorage.getItem(Y_KEY);
+  const savedX = readPersistenceItem("userPreferences", X_KEY);
+  const savedY = readPersistenceItem("userPreferences", Y_KEY);
 
   if (savedX !== null && savedY !== null) {
     const x = Number(savedX);

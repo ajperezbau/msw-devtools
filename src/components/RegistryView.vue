@@ -315,6 +315,7 @@ import MswButton from "./MswButton.vue";
 import MswCheckbox from "./MswCheckbox.vue";
 import MswInput from "./MswInput.vue";
 import {
+  USER_PREFERENCE_KEYS,
   scenarioRegistry,
   scenarioState,
   handlerDelays,
@@ -323,6 +324,8 @@ import {
   customPresets,
   globalDelay,
   displayKey,
+  readPersistenceItem,
+  writePersistenceItem,
 } from "../mswRegistry";
 
 const emit = defineEmits<{
@@ -331,9 +334,15 @@ const emit = defineEmits<{
   (e: "preset-created"): void;
 }>();
 
-const searchQuery = ref(localStorage.getItem("msw-scenarios-filter") || "");
+const searchQuery = ref(
+  readPersistenceItem("userPreferences", USER_PREFERENCE_KEYS.registryFilter) ||
+    "",
+);
 const showOnlyModified = ref(
-  localStorage.getItem("msw-show-only-modified") === "true",
+  readPersistenceItem(
+    "userPreferences",
+    USER_PREFERENCE_KEYS.showOnlyModified,
+  ) === "true",
 );
 const focusedKey = ref<string | null>(null);
 
@@ -474,11 +483,19 @@ const filteredRegistryKeys = computed(() => {
 });
 
 watch(searchQuery, (newFilter) => {
-  localStorage.setItem("msw-scenarios-filter", newFilter);
+  writePersistenceItem(
+    "userPreferences",
+    USER_PREFERENCE_KEYS.registryFilter,
+    newFilter,
+  );
 });
 
 watch(showOnlyModified, (newValue) => {
-  localStorage.setItem("msw-show-only-modified", String(newValue));
+  writePersistenceItem(
+    "userPreferences",
+    USER_PREFERENCE_KEYS.showOnlyModified,
+    String(newValue),
+  );
 });
 </script>
 
