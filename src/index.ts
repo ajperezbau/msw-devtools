@@ -21,6 +21,7 @@ export function initMswDevtools(options: MswDevtoolsOptions): void {
   setupMswRegistry(options.worker, options.urlResolver, {
     initialScenarioMode: options.initialScenarioMode,
     persistence: options.persistence,
+    initialShowToggle: options.initialShowToggle,
   });
 
   if (!MswDevtoolsElement) {

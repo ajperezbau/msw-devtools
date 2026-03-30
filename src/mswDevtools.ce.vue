@@ -1,5 +1,5 @@
 <template>
-  <MswToggle v-model="isOpen" />
+  <MswToggle v-if="showToggleButton" v-model="isOpen" />
 
   <div
     v-if="isOpen"
@@ -137,6 +137,56 @@
           </div>
         </div>
         <div class="panel-actions">
+          <MswButton
+            type="button"
+            variant="icon"
+            @click="toggleToggleButtonVisibility"
+            class="toggle-visibility-button"
+            :title="
+              showToggleButton ? 'Hide DevTools Button' : 'Show DevTools Button'
+            "
+            :aria-label="
+              showToggleButton ? 'Hide DevTools Button' : 'Show DevTools Button'
+            "
+            :aria-pressed="showToggleButton"
+          >
+            <svg
+              v-if="showToggleButton"
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 3l18 18" />
+              <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
+              <path
+                d="M9.88 5.09A10.94 10.94 0 0 1 12 4.91c5.05 0 9.27 3.11 10.5 7.5a10.96 10.96 0 0 1-3.18 4.97"
+              />
+              <path
+                d="M6.61 6.61A10.95 10.95 0 0 0 1.5 12.41c1.23 4.39 5.45 7.5 10.5 7.5 1.64 0 3.2-.33 4.61-.92"
+              />
+            </svg>
+            <svg
+              v-else
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M1.5 12s4.23-7.5 10.5-7.5 10.5 7.5 10.5 7.5-4.23 7.5-10.5 7.5S1.5 12 1.5 12z"
+              />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </MswButton>
           <MswButton
             type="button"
             variant="icon"
@@ -398,6 +448,7 @@ import {
   customOverrides,
   customPresets,
   customScenarios,
+  getInitialShowToggleValue,
   getInitialScenarioValue,
   globalDelay,
   handlerDelays,
@@ -420,6 +471,7 @@ const theme = ref<"light" | "dark">(
     | "light"
     | "dark") || "dark",
 );
+const showToggleButton = ref(getInitialShowToggleValue());
 
 const passthroughSnapshot = ref<Record<string, string> | null>(
   JSON.parse(
@@ -505,6 +557,15 @@ const toggleTheme = () => {
     "userPreferences",
     USER_PREFERENCE_KEYS.theme,
     theme.value,
+  );
+};
+
+const toggleToggleButtonVisibility = () => {
+  showToggleButton.value = !showToggleButton.value;
+  writePersistenceItem(
+    "userPreferences",
+    USER_PREFERENCE_KEYS.showToggleButton,
+    String(showToggleButton.value),
   );
 };
 

@@ -26,6 +26,28 @@ test.describe("MSW DevTools - QA Mode", () => {
     ).toHaveClass(/active/);
   });
 
+  test("should hide the launcher initially but still allow opening via keyboard shortcut", async ({
+    page,
+  }) => {
+    await devToolsPage.goto("/?initialShowToggle=false&persistence=none");
+
+    await devToolsPage.expectHidden();
+    await devToolsPage.pressShortcut();
+    await devToolsPage.expectModalVisible();
+
+    await devToolsPage.toggleLauncherVisibility();
+    await devToolsPage.close();
+
+    await devToolsPage.expectVisible();
+    await expect
+      .poll(async () => {
+        return page.evaluate(() => {
+          return window.localStorage.getItem("msw-show-devtools-button");
+        });
+      })
+      .toBeNull();
+  });
+
   test("should persist scenario state in sessionStorage across reloads", async ({
     page,
   }) => {
@@ -122,6 +144,55 @@ test.describe("MSW DevTools - QA Mode", () => {
     await expect(page.locator(".presets-list-item")).toContainText(
       "Personal QA",
     );
+  });
+
+  test("should persist launcher visibility in userPreferences and override the initial value on reload", async ({
+    page,
+  }) => {
+    await devToolsPage.goto(
+      "/?initialShowToggle=false&runtimeState=session&userPreferences=local&authoredData=local",
+    );
+
+    await devToolsPage.expectHidden();
+    await devToolsPage.pressShortcut();
+    await devToolsPage.expectModalVisible();
+    await devToolsPage.toggleLauncherVisibility();
+    await devToolsPage.close();
+
+    await devToolsPage.expectVisible();
+    await expect
+      .poll(async () => {
+        return page.evaluate(() => {
+          return window.localStorage.getItem("msw-show-devtools-button");
+        });
+      })
+      .toBe("true");
+
+    await page.reload();
+    await devToolsPage.expectVisible();
+
+    await page.goto(
+      "/?initialShowToggle=false&runtimeState=session&userPreferences=local&authoredData=local",
+    );
+    await devToolsPage.expectVisible();
+
+    await devToolsPage.toggle();
+    await devToolsPage.toggleLauncherVisibility();
+    await devToolsPage.close();
+
+    await devToolsPage.expectHidden();
+    await expect
+      .poll(async () => {
+        return page.evaluate(() => {
+          return window.localStorage.getItem("msw-show-devtools-button");
+        });
+      })
+      .toBe("false");
+
+    await page.goto(
+      "/?initialShowToggle=true&runtimeState=session&userPreferences=local&authoredData=local",
+    );
+    await devToolsPage.expectHidden();
   });
 
   test("should skip persistence entirely when configured with none", async ({

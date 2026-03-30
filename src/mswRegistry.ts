@@ -39,6 +39,7 @@ export const USER_PREFERENCE_KEYS = {
   theme: "msw-devtools-theme",
   toggleX: "msw-devtools-x",
   toggleY: "msw-devtools-y",
+  showToggleButton: "msw-show-devtools-button",
   registryFilter: "msw-scenarios-filter",
   showOnlyModified: "msw-show-only-modified",
 } as const;
@@ -87,6 +88,7 @@ const noopStorage: PersistenceStorage = {
 };
 
 let initialScenarioMode: MswDevtoolsInitialScenarioMode = "handler-default";
+let initialShowToggle = true;
 let resolvedPersistenceConfig: Required<MswDevtoolsPersistenceConfig> = {
   ...DEFAULT_PERSISTENCE_CONFIG,
 };
@@ -616,9 +618,13 @@ const registerInternal = (config: {
 export const setupMswRegistry = (
   instance: any,
   resolver?: (url: string) => string,
-  options?: Pick<MswDevtoolsOptions, "initialScenarioMode" | "persistence">,
+  options?: Pick<
+    MswDevtoolsOptions,
+    "initialScenarioMode" | "persistence" | "initialShowToggle"
+  >,
 ) => {
   initialScenarioMode = options?.initialScenarioMode ?? "handler-default";
+  initialShowToggle = options?.initialShowToggle ?? true;
   resolvedPersistenceConfig = normalizePersistenceConfig(options?.persistence);
   hydratePersistedState();
 
@@ -787,6 +793,18 @@ watch(globalDelay, (newDelay) => {
 
 export const getInitialScenarioValue = (key: string) => {
   return scenarioRegistry[key]?.initialScenario || "default";
+};
+
+export const getInitialShowToggleValue = () => {
+  const persistedValue = readPersistenceItem(
+    "userPreferences",
+    USER_PREFERENCE_KEYS.showToggleButton,
+  );
+
+  if (persistedValue === "true") return true;
+  if (persistedValue === "false") return false;
+
+  return initialShowToggle;
 };
 
 export const readPersistenceItem = (

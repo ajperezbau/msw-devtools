@@ -93,6 +93,7 @@ export interface MswDevtoolsOptions {
   urlResolver?: (url: string) => string;
   initialScenarioMode?: MswDevtoolsInitialScenarioMode;
   persistence?: MswDevtoolsPersistence;
+  initialShowToggle?: boolean;
 }
 
 /**

@@ -14,6 +14,7 @@ export class DevToolsPage {
   readonly importButton: Locator;
   readonly fetchUsersButton: Locator;
   readonly fetchProductsButton: Locator;
+  readonly toggleVisibilityButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -41,6 +42,9 @@ export class DevToolsPage {
     this.fetchUsersButton = page.getByRole("button", { name: /Fetch Users/ });
     this.fetchProductsButton = page.getByRole("button", {
       name: /Fetch Products/,
+    });
+    this.toggleVisibilityButton = this.dialog.getByRole("button", {
+      name: /(Show|Hide) DevTools Button/,
     });
   }
 
@@ -94,6 +98,13 @@ export class DevToolsPage {
 
   async goto(path = "/") {
     await this.page.goto(path);
+    await expect
+      .poll(async () => {
+        return this.page.evaluate(() => {
+          return !!document.querySelector("msw-devtools")?.shadowRoot;
+        });
+      })
+      .toBe(true);
   }
 
   async toggle() {
@@ -144,6 +155,10 @@ export class DevToolsPage {
     await expect(this.toggleButton).toBeVisible();
   }
 
+  async expectHidden() {
+    await expect(this.toggleButton).toBeHidden();
+  }
+
   async expectModalVisible() {
     await expect(this.dialog).toBeVisible();
   }
@@ -156,6 +171,10 @@ export class DevToolsPage {
     await expect(
       this.dialog.getByRole("heading", { name: title }),
     ).toBeVisible();
+  }
+
+  async toggleLauncherVisibility() {
+    await this.toggleVisibilityButton.click();
   }
 
   async getHandlerRow(name: string) {
