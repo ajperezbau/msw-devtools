@@ -58,6 +58,8 @@ export interface LogEntry {
   pathParams?: Record<string, string>;
 }
 
+export type ActivityLogDetailsTab = "general" | "request" | "response";
+
 /**
  * Represents a collection of scenarios that can be applied at once.
  */

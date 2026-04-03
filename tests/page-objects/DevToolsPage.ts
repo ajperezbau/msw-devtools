@@ -49,8 +49,12 @@ export class DevToolsPage {
   }
 
   async switchTab(tab: "Registry" | "Activity Log" | "Presets") {
-    // Note: The UI shows "Activity Log (N)", so we use part of the name
-    await this.dialog.getByRole("button", { name: tab, exact: false }).click();
+    await this.dialog
+      .getByRole("button", {
+        name: tab,
+        exact: tab !== "Activity Log",
+      })
+      .click();
   }
 
   async saveCurrentAsPreset(name: string) {
@@ -246,6 +250,11 @@ export class DevToolsPage {
     await entry.click();
   }
 
+  async expectLogEntrySelected(key: string) {
+    const entry = await this.getLogEntry(key);
+    await expect(entry).toHaveClass(/selected/);
+  }
+
   async expectLogRequestPreview(url: string, previewText: string) {
     const entry = await this.getLogEntry(url);
     await expect(entry.getByText(previewText)).toBeVisible();
@@ -297,6 +306,12 @@ export class DevToolsPage {
 
   async switchToTab(tab: "General" | "Request" | "Response") {
     await this.dialog.getByRole("button", { name: tab, exact: false }).click();
+  }
+
+  async expectDetailsTabActive(tab: "General" | "Request" | "Response") {
+    await expect(
+      this.dialog.getByRole("button", { name: tab, exact: true }),
+    ).toHaveClass(/active/);
   }
 
   async expectTabContentVisible(heading: string) {

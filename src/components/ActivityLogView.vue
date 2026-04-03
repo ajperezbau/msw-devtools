@@ -195,7 +195,7 @@
               :key="tab.id"
               class="tab-btn"
               :class="{ active: activeTab === tab.id }"
-              @click="activeTab = tab.id"
+              @click="emit('update:selectedDetailsTab', tab.id)"
             >
               {{ tab.label }}
               <span v-if="tab.count !== undefined" class="tab-count">{{
@@ -373,7 +373,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, toRef, watch } from "vue";
 import MswBadge from "./MswBadge.vue";
 import MswButton from "./MswButton.vue";
 import MswInput from "./MswInput.vue";
@@ -385,20 +385,25 @@ import {
   customScenarios,
   displayKey,
 } from "../mswRegistry";
-import type { LogEntry } from "../types";
+import type { ActivityLogDetailsTab, LogEntry } from "../types";
 
 const props = defineProps<{
   filterKey: string | null;
+  selectedLogId: string | null;
+  selectedDetailsTab: ActivityLogDetailsTab;
 }>();
 
 const emit = defineEmits<{
   (e: "update:filterKey", value: string | null): void;
+  (e: "update:selectedLogId", value: string | null): void;
+  (e: "update:selectedDetailsTab", value: ActivityLogDetailsTab): void;
   (e: "open-override", entry: LogEntry): void;
   (e: "view-handler", key: string): void;
 }>();
 
-const selectedLogId = ref<string | null>(null);
-const activeTab = ref("general");
+const filterKey = toRef(props, "filterKey");
+const selectedLogId = toRef(props, "selectedLogId");
+const activeTab = toRef(props, "selectedDetailsTab");
 const selectedMethods = ref<Set<string>>(new Set(["ALL"]));
 
 // Status code map for display
@@ -415,36 +420,12 @@ const statusMap: Record<number, string> = {
   500: "Internal Server Error",
 };
 
-const selectedLog = computed(() =>
-  activityLog.find((l) => l.id === selectedLogId.value),
-);
-
-const tabs = computed(() => {
-  const queryCount = selectedLog.value?.queryParams
-    ? Object.keys(selectedLog.value.queryParams).length
-    : 0;
-  const pathCount = selectedLog.value?.pathParams
-    ? Object.keys(selectedLog.value.pathParams).length
-    : 0;
-  const totalParamsCount = queryCount + pathCount;
-
-  return [
-    { id: "general", label: "General" },
-    {
-      id: "request",
-      label: "Request",
-      count: totalParamsCount > 0 ? totalParamsCount : undefined,
-    },
-    { id: "response", label: "Response" },
-  ];
-});
-
 const isCustomScenario = (key: string, scenarioName: string) => {
   return customScenarios[key] && customScenarios[key][scenarioName];
 };
 
 const selectLog = (id: string) => {
-  selectedLogId.value = id;
+  emit("update:selectedLogId", id);
 };
 
 const toggleMethod = (method: string) => {
@@ -467,7 +448,7 @@ const searchQuery = ref("");
 const filteredActivityLog = computed(() => {
   const query = searchQuery.value.toLowerCase();
   return activityLog.filter((entry) => {
-    const matchesKey = !props.filterKey || entry.key === props.filterKey;
+    const matchesKey = !filterKey.value || entry.key === filterKey.value;
     const matchesMethod =
       selectedMethods.value.has("ALL") ||
       selectedMethods.value.has(entry.method);
@@ -483,14 +464,46 @@ const filteredActivityLog = computed(() => {
   });
 });
 
-watch(filteredActivityLog, (newLogs) => {
-  if (
-    selectedLogId.value &&
-    !newLogs.find((l) => l.id === selectedLogId.value)
-  ) {
-    selectedLogId.value = null;
-  }
+const selectedLog = computed(
+  () =>
+    filteredActivityLog.value.find((entry) => entry.id === selectedLogId.value) ??
+    null,
+);
+
+const tabs = computed<
+  Array<{ id: ActivityLogDetailsTab; label: string; count?: number }>
+>(() => {
+  const queryCount = selectedLog.value?.queryParams
+    ? Object.keys(selectedLog.value.queryParams).length
+    : 0;
+  const pathCount = selectedLog.value?.pathParams
+    ? Object.keys(selectedLog.value.pathParams).length
+    : 0;
+  const totalParamsCount = queryCount + pathCount;
+
+  return [
+    { id: "general", label: "General" },
+    {
+      id: "request",
+      label: "Request",
+      count: totalParamsCount > 0 ? totalParamsCount : undefined,
+    },
+    { id: "response", label: "Response" },
+  ];
 });
+
+watch(
+  filteredActivityLog,
+  (newLogs) => {
+    if (
+      selectedLogId.value &&
+      !newLogs.find((entry) => entry.id === selectedLogId.value)
+    ) {
+      emit("update:selectedLogId", null);
+    }
+  },
+  { immediate: true },
+);
 
 const formatTime = (timestamp: number) => {
   return new Date(timestamp).toLocaleTimeString(undefined, {
