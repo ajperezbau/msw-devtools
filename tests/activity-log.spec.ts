@@ -716,7 +716,7 @@ test.describe("MSW DevTools - Activity Log", () => {
       await entry.click();
 
       // Verify selected state
-      await expect(entry).toHaveClass(/selected/);
+      await devToolsPage.expectLogEntrySelected("users");
     });
 
     test("should maintain selection when switching between tabs", async () => {
@@ -740,6 +740,44 @@ test.describe("MSW DevTools - Activity Log", () => {
       // Switch back to General tab
       await devToolsPage.switchToTab("General");
       await devToolsPage.expectGeneralTabInfo({ handlerKey: "products" });
+    });
+
+    test("should keep the selected activity log entry after closing and reopening the devtools", async () => {
+      await devToolsPage.fetchUsersButton.click();
+
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+      await devToolsPage.selectLogEntry("users");
+      await devToolsPage.expectLogEntrySelected("users");
+      await devToolsPage.switchToTab("Response");
+      await devToolsPage.expectDetailsTabActive("Response");
+
+      await devToolsPage.close();
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+
+      await devToolsPage.expectLogEntrySelected("users");
+      await devToolsPage.expectDetailsTabActive("Response");
+      await devToolsPage.expectResponseTabInfo(true);
+    });
+
+    test("should keep the selected activity log entry when switching between top-level tabs", async () => {
+      await devToolsPage.fetchProductsButton.click();
+
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Activity Log");
+      await devToolsPage.selectLogEntry("products");
+      await devToolsPage.expectLogEntrySelected("products");
+      await devToolsPage.switchToTab("Response");
+      await devToolsPage.expectDetailsTabActive("Response");
+
+      await devToolsPage.switchTab("Registry");
+      await devToolsPage.switchTab("Presets");
+      await devToolsPage.switchTab("Activity Log");
+
+      await devToolsPage.expectLogEntrySelected("products");
+      await devToolsPage.expectDetailsTabActive("Response");
+      await devToolsPage.expectResponseTabInfo(true);
     });
   });
 });

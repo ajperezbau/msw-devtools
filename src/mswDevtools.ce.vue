@@ -423,6 +423,8 @@
         <ActivityLogView
           v-if="activeTab === 'log'"
           v-model:filterKey="logFilterKey"
+          v-model:selectedLogId="selectedActivityLogId"
+          v-model:selectedDetailsTab="selectedActivityLogTab"
           @open-override="openOverrideEditorFromLog"
           @view-handler="viewHandlerForKey"
         />
@@ -459,7 +461,11 @@ import {
   scenarioState,
   writePersistenceItem,
 } from "./mswRegistry";
-import type { ExportOptions, LogEntry } from "./types";
+import type {
+  ActivityLogDetailsTab,
+  ExportOptions,
+  LogEntry,
+} from "./types";
 
 const isOpen = ref(false);
 const activeTab = ref<"registry" | "log" | "presets">("registry");
@@ -570,6 +576,17 @@ const toggleToggleButtonVisibility = () => {
 };
 
 const logFilterKey = ref<string | null>(null);
+const selectedActivityLogId = ref<string | null>(null);
+const selectedActivityLogTab = ref<ActivityLogDetailsTab>("general");
+
+watch(activityLog, (newLog) => {
+  if (
+    selectedActivityLogId.value &&
+    !newLog.some((entry) => entry.id === selectedActivityLogId.value)
+  ) {
+    selectedActivityLogId.value = null;
+  }
+});
 
 const editingOverrideKey = ref<string | null>(null);
 const initialOverrideData = ref<{ body: string; status: number } | null>(null);
