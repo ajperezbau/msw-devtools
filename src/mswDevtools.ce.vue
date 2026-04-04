@@ -395,8 +395,10 @@
         <RegistryView
           v-if="activeTab === 'registry'"
           ref="registryViewRef"
+          :selected-log-id="selectedActivityLogId"
           @open-override="openOverrideEditor"
           @view-log="viewLogForKey"
+          @view-log-entry="viewLogEntry"
           @preset-created="activeTab = 'presets'"
         />
       </KeepAlive>
@@ -422,6 +424,7 @@
       <KeepAlive>
         <ActivityLogView
           v-if="activeTab === 'log'"
+          ref="activityLogViewRef"
           v-model:filterKey="logFilterKey"
           v-model:selectedLogId="selectedActivityLogId"
           v-model:selectedDetailsTab="selectedActivityLogTab"
@@ -470,6 +473,7 @@ import type {
 const isOpen = ref(false);
 const activeTab = ref<"registry" | "log" | "presets">("registry");
 const registryViewRef = ref<any>(null);
+const activityLogViewRef = ref<any>(null);
 const resetMenuContainer = ref<HTMLElement | null>(null);
 
 const theme = ref<"light" | "dark">(
@@ -606,7 +610,22 @@ const openOverrideEditorFromLog = (entry: LogEntry) => {
 
 const viewLogForKey = (key: string) => {
   logFilterKey.value = key;
+  selectedActivityLogId.value = null;
+  selectedActivityLogTab.value = "general";
   activeTab.value = "log";
+  nextTick(() => {
+    activityLogViewRef.value?.showHandlerLogs(key);
+  });
+};
+
+const viewLogEntry = (entryId: string) => {
+  logFilterKey.value = null;
+  selectedActivityLogId.value = entryId;
+  selectedActivityLogTab.value = "general";
+  activeTab.value = "log";
+  nextTick(() => {
+    activityLogViewRef.value?.showLogEntry(entryId);
+  });
 };
 
 const viewHandlerForKey = async (key: string) => {

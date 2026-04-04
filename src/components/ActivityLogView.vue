@@ -445,6 +445,23 @@ const toggleMethod = (method: string) => {
 
 const searchQuery = ref("");
 
+const resetLocalFilters = () => {
+  searchQuery.value = "";
+  selectedMethods.value = new Set(["ALL"]);
+};
+
+const showLogEntry = (id: string) => {
+  resetLocalFilters();
+  emit("update:filterKey", null);
+  emit("update:selectedLogId", id);
+};
+
+const showHandlerLogs = (key: string) => {
+  resetLocalFilters();
+  emit("update:selectedLogId", null);
+  emit("update:filterKey", key);
+};
+
 const filteredActivityLog = computed(() => {
   const query = searchQuery.value.toLowerCase();
   return activityLog.filter((entry) => {
@@ -525,6 +542,12 @@ const formatFullTime = (timestamp: number) => {
   const ms = String(d.getMilliseconds()).padStart(3, "0");
   return `${time}.${ms}`;
 };
+
+defineExpose({
+  resetLocalFilters,
+  showLogEntry,
+  showHandlerLogs,
+});
 </script>
 
 <style scoped>
