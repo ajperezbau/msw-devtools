@@ -719,17 +719,36 @@ test.describe("MSW DevTools - Activity Log", () => {
       await expect(await devToolsPage.getLogEntry("products")).toBeVisible();
     });
 
-    test("should show the latest response as an example when the selected scenario is defined in code", async () => {
-      await devToolsPage.fetchUsersButton.click();
-
+    test("should show a direct preview for code-defined scenarios in the handler inspector", async () => {
       await devToolsPage.toggle();
       await devToolsPage.switchTab("Registry");
       await devToolsPage.openHandlerInspector("users");
 
       await devToolsPage.expectHandlerInspectorText(
-        /preview is unavailable because this scenario is defined in code/i,
+        /preview generated from the selected code-defined scenario/i,
       );
       await devToolsPage.expectHandlerInspectorText("John");
+    });
+
+    test("should show a clear fallback message for auto-discovered handlers", async ({
+      page,
+    }) => {
+      await page.evaluate(async () => {
+        const response = await fetch("/api/status");
+        return response.json();
+      });
+
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Registry");
+      await devToolsPage.openHandlerInspector("[GET] /api/status");
+
+      await devToolsPage.expectHandlerInspectorText(
+        /auto-discovered handlers cannot be previewed ahead of time/i,
+      );
+      await devToolsPage.expectHandlerInspectorText(
+        /showing the latest observed response as an example/i,
+      );
+      await devToolsPage.expectHandlerInspectorText("ok");
     });
 
     test("should show a direct preview for custom scenarios in the handler inspector", async () => {

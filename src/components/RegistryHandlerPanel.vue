@@ -134,10 +134,20 @@
             v-else-if="preview.exampleStatusOnly"
             class="empty-card preview-example-card"
           >
-            <strong>Latest example available.</strong>
-            <span>
+            <strong>
+              {{
+                preview.source === "example"
+                  ? "Latest example available."
+                  : "Status preview available."
+              }}
+            </strong>
+            <span v-if="preview.source === 'example'">
               The latest request did not store a response body, but it returned
               status {{ preview.exampleStatusOnly }}.
+            </span>
+            <span v-else>
+              The selected configuration returns status
+              {{ preview.exampleStatusOnly }} without a previewable body.
             </span>
           </div>
           <div v-else class="empty-card">
@@ -258,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import CodeBlock from "./CodeBlock.vue";
 import MswBadge from "./MswBadge.vue";
 import MswButton from "./MswButton.vue";
@@ -267,10 +277,12 @@ import {
   customOverrides,
   customScenarios,
   displayKey,
+  getHandlerPreview,
   handlerDelays,
   scenarioRegistry,
   scenarioState,
 } from "../mswRegistry";
+import type { HandlerPreviewResult } from "../types";
 
 const props = defineProps<{
   handlerKey: string;
@@ -329,90 +341,43 @@ const activeCustomScenario = computed(
 );
 const isCurrentScenarioCustom = computed(() => !!activeCustomScenario.value);
 
-const parsePreviewCode = (value: unknown) => {
-  if (value === null || value === undefined) {
-    return { body: null as string | object | null, language: "json" as const };
-  }
-
-  if (typeof value !== "string") {
-    return { body: value, language: "json" as const };
-  }
-
-  try {
-    return { body: JSON.parse(value), language: "json" as const };
-  } catch {
-    return { body: value, language: "text" as const };
-  }
-};
-
-const findExampleRequest = () => {
-  if (handlerRequests.value.length === 0) return null;
-
-  if (currentScenario.value === "passthrough") {
-    return (
-      handlerRequests.value.find((entry) => entry.scenario.includes("Real API")) ??
-      handlerRequests.value[0] ??
-      null
-    );
-  }
-
-  return (
-    handlerRequests.value.find((entry) => entry.scenario === currentScenario.value) ??
-    handlerRequests.value[0] ??
-    null
-  );
-};
-
-const preview = computed(() => {
-  if (hasActiveOverride.value && activeOverride.value) {
-    const parsed = parsePreviewCode(activeOverride.value.body);
-    return {
-      description: "Effective response from the active manual override.",
-      notice: null as string | null,
-      status: activeOverride.value.status,
-      body: parsed.body,
-      language: parsed.language,
-      exampleStatusOnly: null as number | null,
-    };
-  }
-
-  if (activeCustomScenario.value) {
-    const parsed = parsePreviewCode(activeCustomScenario.value.body);
-    return {
-      description: "Preview generated from the selected custom scenario.",
-      notice: null as string | null,
-      status: activeCustomScenario.value.status,
-      body: parsed.body,
-      language: parsed.language,
-      exampleStatusOnly: null as number | null,
-    };
-  }
-
-  const exampleRequest = findExampleRequest();
-  const exampleResponse = exampleRequest?.responseBody;
-  const exampleStatus =
-    exampleRequest && exampleRequest.status > 0 ? exampleRequest.status : null;
-  const parsedExample =
-    exampleResponse === "__PASSTHROUGH_NO_RECORD__"
-      ? { body: null as string | object | null, language: "json" as const }
-      : parsePreviewCode(exampleResponse);
-
-  return {
-    description:
-      currentScenario.value === "passthrough"
-        ? "Preview is unavailable because the request uses the real network."
-        : "Preview is unavailable because this scenario is defined in code and may be dynamic.",
-    notice:
-      currentScenario.value === "passthrough"
-        ? "This handler is currently using the real API, so the response cannot be known ahead of time."
-        : "The selected scenario is defined in code, so the response cannot be previewed safely without executing the handler.",
-    status: exampleStatus,
-    body: parsedExample.body,
-    language: parsedExample.language,
-    exampleStatusOnly:
-      parsedExample.body === null && exampleStatus ? exampleStatus : null,
-  };
+const preview = ref<HandlerPreviewResult>({
+  source: "unavailable",
+  description: "No preview data available for the selected configuration.",
+  notice: null,
+  status: null,
+  body: null,
+  language: "json",
+  exampleStatusOnly: null,
 });
+
+let previewRequestId = 0;
+
+const syncPreview = async () => {
+  const requestId = ++previewRequestId;
+  const nextPreview = await getHandlerPreview(props.handlerKey);
+
+  if (requestId === previewRequestId) {
+    preview.value = nextPreview;
+  }
+};
+
+watch(
+  [
+    () => props.handlerKey,
+    currentScenario,
+    () => activeOverride.value?.enabled,
+    () => activeOverride.value?.body,
+    () => activeOverride.value?.status,
+    () => activeCustomScenario.value?.body,
+    () => activeCustomScenario.value?.status,
+    () => handlerRequests.value.map((entry) => entry.id).join(","),
+  ],
+  () => {
+    void syncPreview();
+  },
+  { immediate: true },
+);
 
 const formatScenarioLabel = (scenario: string) => {
   if (scenario === "passthrough") return "Real API";
