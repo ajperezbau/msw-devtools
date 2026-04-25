@@ -177,10 +177,9 @@
           <div class="config-grid">
             <div class="config-field">
               <label :for="scenarioSelectId">Scenario</label>
-              <select
+              <MswSelect
                 :id="scenarioSelectId"
                 v-model="currentScenario"
-                class="scenario-select"
               >
                 <option
                   v-for="scenario in metadata.scenarios"
@@ -189,7 +188,7 @@
                 >
                   {{ formatScenarioOption(scenario) }}
                 </option>
-              </select>
+              </MswSelect>
             </div>
 
             <div class="config-field">
@@ -272,6 +271,7 @@ import { computed, ref, watch } from "vue";
 import CodeBlock from "./CodeBlock.vue";
 import MswBadge from "./MswBadge.vue";
 import MswButton from "./MswButton.vue";
+import MswSelect from "./MswSelect.vue";
 import {
   activityLog,
   customOverrides,
@@ -643,7 +643,6 @@ const formatFullTime = (timestamp: number) => {
   font-weight: 700;
 }
 
-.scenario-select,
 .delay-input {
   width: 100%;
   border-radius: 0.5rem;
@@ -654,7 +653,6 @@ const formatFullTime = (timestamp: number) => {
   background: var(--input-bg);
 }
 
-.scenario-select:focus,
 .delay-input:focus {
   outline: none;
   border-color: var(--accent-color);

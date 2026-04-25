@@ -209,9 +209,9 @@
               </div>
             </td>
             <td class="col-scenario">
-              <select
+              <MswSelect
                 v-model="scenarioState[key]"
-                class="scenario-select"
+                size="sm"
                 :class="{ 'is-modified': isModified(key) }"
                 @click.stop
               >
@@ -229,7 +229,7 @@
                         : ""
                   }}
                 </option>
-              </select>
+              </MswSelect>
             </td>
             <td class="col-delay">
               <div class="handler-delay-wrapper">
@@ -353,6 +353,7 @@ import MswBadge from "./MswBadge.vue";
 import MswButton from "./MswButton.vue";
 import MswCheckbox from "./MswCheckbox.vue";
 import MswInput from "./MswInput.vue";
+import MswSelect from "./MswSelect.vue";
 import RegistryHandlerPanel from "./RegistryHandlerPanel.vue";
 import {
   USER_PREFERENCE_KEYS,
@@ -971,29 +972,6 @@ watch(
 
 .col-scenario {
   width: 280px;
-}
-
-.scenario-select {
-  width: 100%;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-main);
-  background-color: var(--input-bg);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.scenario-select:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.scenario-select.is-modified {
-  border-color: var(--accent-color);
-  font-weight: 600;
 }
 
 .col-delay {
