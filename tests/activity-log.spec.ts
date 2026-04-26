@@ -730,6 +730,26 @@ test.describe("MSW DevTools - Activity Log", () => {
       await devToolsPage.expectHandlerInspectorText("John");
     });
 
+    test("should expand and close the response preview from the handler inspector", async ({
+      page,
+    }) => {
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Registry");
+      await devToolsPage.openHandlerInspector("users");
+
+      await devToolsPage.expandHandlerResponsePreview();
+      await devToolsPage.expectExpandedHandlerResponsePreviewVisible();
+      await expect(
+        page.getByRole("dialog", { name: "Expanded Response Preview" }),
+      ).toContainText("John");
+
+      await page.keyboard.press("Escape");
+
+      await devToolsPage.expectExpandedHandlerResponsePreviewHidden();
+      await devToolsPage.expectModalVisible();
+      await devToolsPage.expectHandlerInspectorVisible("users");
+    });
+
     test("should show a clear fallback message for auto-discovered handlers", async ({
       page,
     }) => {

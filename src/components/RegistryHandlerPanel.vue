@@ -108,17 +108,44 @@
         </div>
       </section>
 
-      <section class="panel-card">
+      <section class="panel-card preview-card">
         <div class="card-header">
           <div>
             <h3 class="card-title">Response Preview</h3>
             <p class="card-description">{{ preview.description }}</p>
           </div>
-          <MswBadge
-            v-if="preview.status !== null"
-            variant="status"
-            :label="String(preview.status)"
-          />
+          <div class="preview-card-actions">
+            <MswBadge
+              v-if="preview.status !== null"
+              variant="status"
+              :label="String(preview.status)"
+            />
+            <MswButton
+              v-if="canExpandPreview"
+              type="button"
+              variant="icon"
+              size="sm"
+              class="preview-expand-button"
+              title="Expand response preview"
+              aria-label="Expand response preview"
+              @click="openExpandedPreview"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 3H5a2 2 0 00-2 2v3m16 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3m-16 0v3a2 2 0 002 2h3"
+                />
+              </svg>
+            </MswButton>
+          </div>
         </div>
 
         <div v-if="preview.notice" class="preview-notice">
@@ -135,13 +162,7 @@
           v-else-if="preview.exampleStatusOnly"
           class="empty-card preview-example-card"
         >
-          <strong>
-            {{
-              preview.source === "example"
-                ? "Latest example available."
-                : "Status preview available."
-            }}
-          </strong>
+          <strong>{{ previewExampleTitle }}</strong>
           <span v-if="preview.source === 'example'">
             The latest request did not store a response body, but it returned
             status {{ preview.exampleStatusOnly }}.
@@ -206,11 +227,96 @@
         </div>
       </section>
     </div>
+
+    <Transition name="expanded-preview">
+      <div
+        v-if="isPreviewExpanded"
+        class="expanded-preview-overlay"
+        @click.self="closeExpandedPreview"
+      >
+        <section
+          class="expanded-preview-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="expanded-response-preview-title"
+        >
+          <div class="expanded-preview-header">
+            <div>
+              <h3 id="expanded-response-preview-title" class="card-title">
+                Expanded Response Preview
+              </h3>
+              <p class="card-description">{{ preview.description }}</p>
+            </div>
+            <div class="preview-card-actions">
+              <MswBadge
+                v-if="preview.status !== null"
+                variant="status"
+                :label="String(preview.status)"
+              />
+              <MswButton
+                type="button"
+                variant="icon"
+                size="sm"
+                class="preview-expand-button"
+                title="Close expanded response preview"
+                aria-label="Close expanded response preview"
+                @click="closeExpandedPreview"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </MswButton>
+            </div>
+          </div>
+
+          <div class="expanded-preview-body">
+            <div v-if="preview.notice" class="preview-notice">
+              {{ preview.notice }}
+            </div>
+
+            <CodeBlock
+              v-if="preview.body !== null"
+              :code="preview.body"
+              :language="preview.language"
+              max-height="calc(80vh - 11rem)"
+            />
+            <div
+              v-else-if="preview.exampleStatusOnly"
+              class="empty-card preview-example-card"
+            >
+              <strong>{{ previewExampleTitle }}</strong>
+              <span v-if="preview.source === 'example'">
+                The latest request did not store a response body, but it
+                returned status {{ preview.exampleStatusOnly }}.
+              </span>
+              <span v-else>
+                The selected configuration returns status
+                {{ preview.exampleStatusOnly }} without a previewable body.
+              </span>
+            </div>
+            <div v-else class="empty-card">
+              No preview data available for the selected configuration.
+            </div>
+          </div>
+        </section>
+      </div>
+    </Transition>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import CodeBlock from "./CodeBlock.vue";
 import MswBadge from "./MswBadge.vue";
 import MswButton from "./MswButton.vue";
@@ -278,8 +384,31 @@ const preview = ref<HandlerPreviewResult>({
   language: "json",
   exampleStatusOnly: null,
 });
+const isPreviewExpanded = ref(false);
+
+const canExpandPreview = computed(
+  () =>
+    preview.value.body !== null ||
+    preview.value.notice !== null ||
+    preview.value.exampleStatusOnly !== null,
+);
+
+const previewExampleTitle = computed(() =>
+  preview.value.source === "example"
+    ? "Latest example available."
+    : "Status preview available.",
+);
 
 let previewRequestId = 0;
+
+const openExpandedPreview = () => {
+  if (!canExpandPreview.value) return;
+  isPreviewExpanded.value = true;
+};
+
+const closeExpandedPreview = () => {
+  isPreviewExpanded.value = false;
+};
 
 const syncPreview = async () => {
   const requestId = ++previewRequestId;
@@ -306,6 +435,35 @@ watch(
   },
   { immediate: true },
 );
+
+watch(
+  () => props.handlerKey,
+  () => {
+    closeExpandedPreview();
+  },
+);
+
+watch(canExpandPreview, (value) => {
+  if (!value && isPreviewExpanded.value) {
+    closeExpandedPreview();
+  }
+});
+
+const handleExpandedPreviewKeydown = (event: KeyboardEvent) => {
+  if (event.key !== "Escape" || !isPreviewExpanded.value) return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  closeExpandedPreview();
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", handleExpandedPreviewKeydown, true);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleExpandedPreviewKeydown, true);
+});
 
 const formatScenarioLabel = (scenario: string) => {
   if (scenario === "passthrough") return "Real API";
@@ -464,6 +622,17 @@ const formatFullTime = (timestamp: number) => {
   gap: 0.25rem;
 }
 
+.preview-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.preview-expand-button.msw-button {
+  flex-shrink: 0;
+}
+
 .request-list {
   display: flex;
   flex-direction: column;
@@ -540,6 +709,71 @@ const formatFullTime = (timestamp: number) => {
   line-height: 1.5;
 }
 
+.expanded-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+}
+
+.expanded-preview-card {
+  width: min(960px, calc(100vw - 3rem));
+  max-height: min(86vh, 960px);
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.expanded-preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 0.875rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.expanded-preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.expanded-preview-enter-active,
+.expanded-preview-leave-active {
+  transition: opacity 220ms ease;
+}
+
+.expanded-preview-enter-active .expanded-preview-card,
+.expanded-preview-leave-active .expanded-preview-card {
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease;
+}
+
+.expanded-preview-enter-from,
+.expanded-preview-leave-to {
+  opacity: 0;
+}
+
+.expanded-preview-enter-from .expanded-preview-card,
+.expanded-preview-leave-to .expanded-preview-card {
+  transform: translateY(20px) scale(0.96);
+  opacity: 0;
+}
+
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -578,5 +812,16 @@ const formatFullTime = (timestamp: number) => {
 .h-5 {
   width: 1.25rem;
   height: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .expanded-preview-overlay {
+    padding: 0.75rem;
+  }
+
+  .expanded-preview-card {
+    width: 100%;
+    max-height: calc(100vh - 1.5rem);
+  }
 }
 </style>

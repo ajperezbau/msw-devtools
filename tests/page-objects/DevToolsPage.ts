@@ -448,6 +448,24 @@ export class DevToolsPage {
     await expect(this.handlerInspector.getByText(text)).toBeVisible();
   }
 
+  async expandHandlerResponsePreview() {
+    await this.handlerInspector
+      .getByRole("button", { name: "Expand response preview" })
+      .click();
+  }
+
+  async expectExpandedHandlerResponsePreviewVisible() {
+    await expect(
+      this.page.getByRole("dialog", { name: "Expanded Response Preview" }),
+    ).toBeVisible();
+  }
+
+  async expectExpandedHandlerResponsePreviewHidden() {
+    await expect(
+      this.page.getByRole("dialog", { name: "Expanded Response Preview" }),
+    ).not.toBeVisible();
+  }
+
   async viewSelectedLogInRegistry() {
     await this.dialog
       .getByRole("button", { name: /View in Registry/i })
