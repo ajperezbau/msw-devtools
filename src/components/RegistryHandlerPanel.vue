@@ -717,8 +717,8 @@ const formatFullTime = (timestamp: number) => {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(4px);
 }
 
 .expanded-preview-card {
