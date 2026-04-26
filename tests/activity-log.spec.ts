@@ -685,6 +685,109 @@ test.describe("MSW DevTools - Activity Log", () => {
       await expect(devToolsPage.dialog.getByText(/Filter:/)).not.toBeVisible();
     });
 
+    test("should open and close the handler inspector from Registry", async () => {
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Registry");
+
+      await devToolsPage.openHandlerInspector("users");
+      await devToolsPage.expectHandlerInspectorVisible("users");
+      await devToolsPage.expectHandlerInspectorText("Response Preview");
+
+      await devToolsPage.closeHandlerInspector();
+      await devToolsPage.expectHandlerInspectorHidden();
+    });
+
+    test("should navigate to the selected activity log entry from the handler inspector without applying a filter", async () => {
+      await devToolsPage.fetchUsersButton.click();
+      await devToolsPage.fetchProductsButton.click();
+
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Registry");
+      await devToolsPage.openHandlerInspector("users");
+      await devToolsPage.expectHandlerInspectorVisible("users");
+
+      await devToolsPage.openLatestRequestFromInspector();
+
+      await expect(
+        devToolsPage.dialog.getByRole("button", {
+          name: "Activity Log",
+          exact: false,
+        }),
+      ).toHaveClass(/active/);
+      await expect(devToolsPage.dialog.getByText(/Filter:/)).not.toBeVisible();
+      await devToolsPage.expectLogEntrySelected("users");
+      await expect(await devToolsPage.getLogEntry("products")).toBeVisible();
+    });
+
+    test("should show a direct preview for code-defined scenarios in the handler inspector", async () => {
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Registry");
+      await devToolsPage.openHandlerInspector("users");
+
+      await devToolsPage.expectHandlerInspectorText(
+        /preview generated from the selected code-defined scenario/i,
+      );
+      await devToolsPage.expectHandlerInspectorText("John");
+    });
+
+    test("should expand and close the response preview from the handler inspector", async ({
+      page,
+    }) => {
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Registry");
+      await devToolsPage.openHandlerInspector("users");
+
+      await devToolsPage.expandHandlerResponsePreview();
+      await devToolsPage.expectExpandedHandlerResponsePreviewVisible();
+      await expect(
+        page.getByRole("dialog", { name: "Expanded Response Preview" }),
+      ).toContainText("John");
+
+      await page.keyboard.press("Escape");
+
+      await devToolsPage.expectExpandedHandlerResponsePreviewHidden();
+      await devToolsPage.expectModalVisible();
+      await devToolsPage.expectHandlerInspectorVisible("users");
+    });
+
+    test("should show a clear fallback message for auto-discovered handlers", async ({
+      page,
+    }) => {
+      await page.evaluate(async () => {
+        const response = await fetch("/api/status");
+        return response.json();
+      });
+
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Registry");
+      await devToolsPage.openHandlerInspector("[GET] /api/status");
+
+      await devToolsPage.expectHandlerInspectorText(
+        /auto-discovered handlers cannot be previewed ahead of time/i,
+      );
+      await devToolsPage.expectHandlerInspectorText(
+        /showing the latest observed response as an example/i,
+      );
+      await devToolsPage.expectHandlerInspectorText("ok");
+    });
+
+    test("should show a direct preview for custom scenarios in the handler inspector", async () => {
+      await devToolsPage.toggle();
+      await devToolsPage.switchTab("Registry");
+
+      await devToolsPage.openOverrideModal("users");
+      await devToolsPage.fillOverrideBody('{"message":"custom preview"}');
+      await devToolsPage.saveOverride("Inspector Custom");
+      await devToolsPage.selectScenario("users", "Inspector Custom");
+
+      await devToolsPage.openHandlerInspector("users");
+
+      await devToolsPage.expectHandlerInspectorText(
+        /preview generated from the selected custom scenario/i,
+      );
+      await devToolsPage.expectHandlerInspectorText("custom preview");
+    });
+
     test("should show 'Use as Override' button in Response tab", async () => {
       // Trigger a request
       await devToolsPage.fetchProductsButton.click();

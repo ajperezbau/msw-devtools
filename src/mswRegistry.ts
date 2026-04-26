@@ -13,6 +13,7 @@ import type {
   CustomOverride,
   CustomScenario,
   HandlerMetadata,
+  HandlerPreviewResult,
   LogEntry,
   MswDevtoolsInitialScenarioMode,
   MswDevtoolsPersistenceConfig,
@@ -258,6 +259,8 @@ interface RegisteredHandler {
 
 let mswInstance: { resetHandlers: (...handlers: any[]) => void } | null = null;
 const registeredHandlers: RegisteredHandler[] = [];
+const handlerPreviewResolvers: Record<string, Record<string, HttpResponseResolver>> =
+  {};
 let baseHandlers: any[] = [];
 let urlResolver: (url: string) => string = (url) => url;
 
@@ -304,6 +307,261 @@ const refreshHandlers = () => {
   mswInstance.resetHandlers(...handlers, ...baseHandlers);
 };
 
+const parsePreviewCode = (
+  value: unknown,
+): Pick<HandlerPreviewResult, "body" | "language"> => {
+  if (value === null || value === undefined) {
+    return { body: null, language: "json" };
+  }
+
+  if (typeof value !== "string") {
+    return { body: value as object, language: "json" };
+  }
+
+  try {
+    return { body: JSON.parse(value) as object, language: "json" };
+  } catch {
+    return { body: value, language: "text" };
+  }
+};
+
+const isResponseLike = (value: unknown): value is Response => {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "clone" in value &&
+    "headers" in value &&
+    "status" in value
+  );
+};
+
+const extractResponsePreview = async (
+  response: Response,
+): Promise<Pick<HandlerPreviewResult, "body" | "language">> => {
+  try {
+    const clonedResponse = response.clone();
+    const contentType = clonedResponse.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+      return {
+        body: (await clonedResponse.json()) as object,
+        language: "json",
+      };
+    }
+
+    const text = await clonedResponse.text();
+    return text ? { body: text, language: "text" } : { body: null, language: "json" };
+  } catch {
+    return { body: null, language: "json" };
+  }
+};
+
+const buildExamplePreview = (
+  exampleRequest: LogEntry,
+  description: string,
+  notice: string,
+): HandlerPreviewResult => {
+  const parsedExample =
+    exampleRequest.responseBody === "__PASSTHROUGH_NO_RECORD__"
+      ? { body: null, language: "json" as const }
+      : parsePreviewCode(exampleRequest.responseBody);
+  const exampleStatus = exampleRequest.status > 0 ? exampleRequest.status : null;
+
+  return {
+    source: "example",
+    description,
+    notice,
+    status: exampleStatus,
+    body: parsedExample.body,
+    language: parsedExample.language,
+    exampleStatusOnly:
+      parsedExample.body === null && exampleStatus ? exampleStatus : null,
+  };
+};
+
+const buildUnavailablePreview = (
+  description: string,
+  notice: string,
+): HandlerPreviewResult => ({
+  source: "unavailable",
+  description,
+  notice,
+  status: null,
+  body: null,
+  language: "json",
+  exampleStatusOnly: null,
+});
+
+const findExampleRequest = (key: string, activeScenario: string) => {
+  const handlerRequests = activityLog.filter((entry) => entry.key === key);
+  if (handlerRequests.length === 0) return null;
+
+  if (activeScenario === "passthrough") {
+    return (
+      handlerRequests.find((entry) => entry.scenario.includes("Real API")) ??
+      handlerRequests[0] ??
+      null
+    );
+  }
+
+  return (
+    handlerRequests.find((entry) => entry.scenario === activeScenario) ??
+    handlerRequests[0] ??
+    null
+  );
+};
+
+const resolvePreviewScenario = (
+  key: string,
+  activeScenario: string,
+  metadata: HandlerMetadata,
+) => {
+  const resolvers = handlerPreviewResolvers[key];
+  if (!resolvers) return null;
+
+  return (
+    resolvers[activeScenario] ??
+    resolvers[metadata.defaultScenario] ??
+    resolvers.default ??
+    resolvers[Object.keys(resolvers)[0] || ""] ??
+    null
+  );
+};
+
+const runCodeDefinedPreview = async (
+  key: string,
+  activeScenario: string,
+  metadata: HandlerMetadata,
+): Promise<HandlerPreviewResult | null> => {
+  const resolver = resolvePreviewScenario(key, activeScenario, metadata);
+  if (!resolver) return null;
+
+  const requestUrl = new URL(urlResolver(metadata.url), window.location.origin).toString();
+
+  try {
+    const response = await resolver({
+      request: new Request(requestUrl, { method: metadata.method }),
+      params: {},
+      cookies: {},
+    } as any);
+
+    if (!isResponseLike(response)) {
+      return null;
+    }
+
+    const parsed = await extractResponsePreview(response);
+
+    return {
+      source: "code",
+      description: "Preview generated from the selected code-defined scenario.",
+      notice: null,
+      status: response.status,
+      body: parsed.body,
+      language: parsed.language,
+      exampleStatusOnly: parsed.body === null ? response.status : null,
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const getHandlerPreview = async (
+  key: string,
+): Promise<HandlerPreviewResult> => {
+  const metadata = scenarioRegistry[key];
+  if (!metadata) {
+    return buildUnavailablePreview(
+      "No preview data available for this handler.",
+      "The selected handler is no longer registered.",
+    );
+  }
+
+  const activeScenario =
+    scenarioState[key] ?? metadata.defaultScenario ?? metadata.initialScenario;
+  const activeOverride = customOverrides[key];
+  const activeCustomScenario = customScenarios[key]?.[activeScenario] ?? null;
+  const hasActiveOverride =
+    !!activeOverride?.enabled && activeScenario !== "passthrough";
+
+  if (hasActiveOverride && activeOverride) {
+    const parsed = parsePreviewCode(activeOverride.body);
+    return {
+      source: "override",
+      description: "Effective response from the active manual override.",
+      notice: null,
+      status: activeOverride.status,
+      body: parsed.body,
+      language: parsed.language,
+      exampleStatusOnly: null,
+    };
+  }
+
+  if (activeCustomScenario) {
+    const parsed = parsePreviewCode(activeCustomScenario.body);
+    return {
+      source: "custom",
+      description: "Preview generated from the selected custom scenario.",
+      notice: null,
+      status: activeCustomScenario.status,
+      body: parsed.body,
+      language: parsed.language,
+      exampleStatusOnly: null,
+    };
+  }
+
+  if (activeScenario === "passthrough") {
+    const exampleRequest = findExampleRequest(key, activeScenario);
+
+    if (exampleRequest) {
+      return buildExamplePreview(
+        exampleRequest,
+        "Preview is unavailable because this handler currently uses the real network. Showing the latest observed response as an example.",
+        "This handler is using the real API, so the response cannot be known ahead of time.",
+      );
+    }
+
+    return buildUnavailablePreview(
+      "Preview is unavailable because this handler currently uses the real network.",
+      "This handler is using the real API, so the response cannot be known ahead of time.",
+    );
+  }
+
+  if (!metadata.isNative) {
+    const generatedPreview = await runCodeDefinedPreview(key, activeScenario, metadata);
+    if (generatedPreview) {
+      return generatedPreview;
+    }
+
+    const exampleRequest = findExampleRequest(key, activeScenario);
+    if (exampleRequest) {
+      return buildExamplePreview(
+        exampleRequest,
+        "Live preview could not be generated for this code-defined scenario. Showing the latest observed response as an example.",
+        "This scenario depends on runtime request data or dynamic code paths, so the panel is showing the latest observed response instead.",
+      );
+    }
+
+    return buildUnavailablePreview(
+      "Preview is unavailable because this code-defined scenario depends on runtime request data.",
+      "The selected scenario is defined in code, but it could not be previewed safely with a synthetic request.",
+    );
+  }
+
+  const exampleRequest = findExampleRequest(key, activeScenario);
+  if (exampleRequest) {
+    return buildExamplePreview(
+      exampleRequest,
+      "Auto-discovered handlers cannot be previewed ahead of time. Showing the latest observed response as an example.",
+      "Only handlers defined with defineHandlers can currently generate a preview before a real request happens.",
+    );
+  }
+
+  return buildUnavailablePreview(
+    "Auto-discovered handlers cannot be previewed ahead of time.",
+    "Only handlers defined with defineHandlers can currently generate a preview before a real request happens.",
+  );
+};
+
 const registerInternal = (config: {
   key: string;
   url: string;
@@ -341,6 +599,10 @@ const registerInternal = (config: {
 
   const originalScenarios = Object.keys(scenarios);
   const initialScenario = resolveInitialScenario(effectiveDefault);
+
+  if (!isNative) {
+    handlerPreviewResolvers[key] = scenarios;
+  }
 
   // Register metadata
   scenarioRegistry[key] = {
