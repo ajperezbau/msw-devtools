@@ -109,6 +109,18 @@ test.describe("MSW DevTools Plugin", () => {
     await expect(devToolsPage.importButton).toBeVisible();
   });
 
+  test("should keep the registry interactive while the handler inspector is open", async () => {
+    await devToolsPage.toggle();
+    await devToolsPage.openHandlerInspector("users");
+    await devToolsPage.expectHandlerInspectorVisible("users");
+
+    await devToolsPage.setHandlerDelay("products", 450);
+
+    const productsRow = await devToolsPage.getHandlerRow("products");
+    await expect(productsRow.getByRole("spinbutton")).toHaveValue("450");
+    await devToolsPage.expectHandlerInspectorVisible("users");
+  });
+
   // TODO: those tests are flaky/hard to stabilize, review in another moment
   test("should apply per-handler delay", async ({ page }) => {
     await devToolsPage.toggle();

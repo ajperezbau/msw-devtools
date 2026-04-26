@@ -124,8 +124,14 @@
       </div>
     </div>
 
-    <div class="registry-workspace">
-      <div class="registry-container">
+    <div
+      class="registry-workspace"
+      :class="{ 'has-inspector': hasInspector }"
+    >
+      <div
+        class="registry-container"
+        :class="{ 'has-inspector': hasInspector }"
+      >
         <table class="registry-table">
         <thead>
           <tr>
@@ -334,16 +340,18 @@
         </tbody>
         </table>
       </div>
+      <Transition name="inspector-shell">
+        <div v-if="inspectedHandlerKey" class="inspector-shell">
+          <RegistryHandlerPanel
+            :handler-key="inspectedHandlerKey"
+            :selected-log-id="selectedLogId"
+            @close="selectedInspectorKey = null"
+            @open-override="emit('open-override', $event)"
+            @view-log-entry="emit('view-log-entry', $event)"
+          />
+        </div>
+      </Transition>
     </div>
-
-    <RegistryHandlerPanel
-      v-if="selectedInspectorKey && scenarioRegistry[selectedInspectorKey]"
-      :handler-key="selectedInspectorKey"
-      :selected-log-id="selectedLogId"
-      @close="selectedInspectorKey = null"
-      @open-override="emit('open-override', $event)"
-      @view-log-entry="emit('view-log-entry', $event)"
-    />
   </div>
 </template>
 
@@ -397,6 +405,11 @@ const showOnlyModified = ref(
 );
 const focusedKey = ref<string | null>(null);
 const selectedInspectorKey = ref<string | null>(null);
+const inspectedHandlerKey = computed(() => {
+  const key = selectedInspectorKey.value;
+  return key && scenarioRegistry[key] ? key : null;
+});
+const hasInspector = computed(() => inspectedHandlerKey.value !== null);
 
 const isSelectionMode = ref(false);
 const selectedKeys = ref(new Set<string>());
@@ -558,17 +571,11 @@ watch(showOnlyModified, (newValue) => {
   );
 });
 
-watch(
-  () =>
-    selectedInspectorKey.value
-      ? scenarioRegistry[selectedInspectorKey.value]
-      : true,
-  (handlerExists) => {
-    if (!handlerExists) {
-      selectedInspectorKey.value = null;
-    }
-  },
-);
+watch(inspectedHandlerKey, (key) => {
+  if (!key && selectedInspectorKey.value) {
+    selectedInspectorKey.value = null;
+  }
+});
 </script>
 
 <style scoped>
@@ -833,15 +840,45 @@ watch(
   height: 100%;
   min-height: 0;
   background-color: var(--bg-main);
+  overflow: hidden;
 }
 
 .registry-container {
   flex: 1;
   height: 100%;
-  overflow-y: auto;
+  min-width: 0;
+  overflow: auto;
   padding: 0;
   background-color: var(--bg-main);
   min-height: 0;
+}
+
+.registry-container.has-inspector .registry-table {
+  min-width: 980px;
+}
+
+.inspector-shell {
+  width: clamp(320px, 32vw, 440px);
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+}
+
+.inspector-shell-enter-active,
+.inspector-shell-leave-active {
+  transition:
+    width 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 300ms ease;
+  will-change: width, transform, opacity;
+}
+
+.inspector-shell-enter-from,
+.inspector-shell-leave-to {
+  width: 0;
+  transform: translateX(18px);
+  opacity: 0;
 }
 
 .registry-table {

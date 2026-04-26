@@ -1,269 +1,264 @@
 <template>
-  <div class="inspector-overlay" @click.self="emit('close')">
-    <aside
-      class="inspector-panel"
-      role="complementary"
-      aria-labelledby="registry-handler-panel-title"
-    >
-      <div class="panel-header">
-        <div class="panel-heading">
-          <div class="panel-badges">
-            <MswBadge variant="method" :label="metadata.method" />
-            <MswBadge
-              v-if="metadata.isNative"
-              variant="native"
-              label="Native"
-              size="sm"
-            />
-            <span v-if="hasActiveOverride" class="state-pill override-pill">
-              Override active
-            </span>
-            <span
-              v-else-if="isCurrentScenarioCustom"
-              class="state-pill custom-pill"
-            >
-              Custom scenario
-            </span>
+  <aside
+    class="inspector-panel"
+    role="complementary"
+    aria-labelledby="registry-handler-panel-title"
+  >
+    <div class="panel-header">
+      <div class="panel-heading">
+        <div class="panel-badges">
+          <MswBadge variant="method" :label="metadata.method" />
+          <MswBadge
+            v-if="metadata.isNative"
+            variant="native"
+            label="Native"
+            size="sm"
+          />
+          <span v-if="hasActiveOverride" class="state-pill override-pill">
+            Override active
+          </span>
+          <span
+            v-else-if="isCurrentScenarioCustom"
+            class="state-pill custom-pill"
+          >
+            Custom scenario
+          </span>
+        </div>
+        <h2 id="registry-handler-panel-title" class="panel-title">
+          {{ displayKey(handlerKey) }}
+        </h2>
+        <p class="panel-url" :title="metadata.url">{{ metadata.url }}</p>
+      </div>
+
+      <MswButton
+        type="button"
+        variant="icon"
+        size="sm"
+        class="close-button"
+        title="Close handler details"
+        aria-label="Close handler details"
+        @click="emit('close')"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </MswButton>
+    </div>
+
+    <div class="panel-body">
+      <section class="panel-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Recent Requests</h3>
+            <p class="card-description">
+              Latest requests handled by this handler.
+            </p>
           </div>
-          <h2 id="registry-handler-panel-title" class="panel-title">
-            {{ displayKey(handlerKey) }}
-          </h2>
-          <p class="panel-url" :title="metadata.url">{{ metadata.url }}</p>
+          <span class="card-meta">
+            {{ recentRequests.length }}/{{ totalRequestCount }}
+          </span>
         </div>
 
-        <MswButton
-          type="button"
-          variant="icon"
-          size="sm"
-          class="close-button"
-          title="Close handler details"
-          aria-label="Close handler details"
-          @click="emit('close')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        <div v-if="recentRequests.length === 0" class="empty-card">
+          No requests recorded for this handler yet.
+        </div>
+
+        <div v-else class="request-list">
+          <button
+            v-for="entry in recentRequests"
+            :key="entry.id"
+            type="button"
+            class="request-link"
+            :class="{ selected: selectedLogId === entry.id }"
+            @click="emit('view-log-entry', entry.id)"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </MswButton>
-      </div>
-
-      <div class="panel-body">
-        <section class="panel-card">
-          <div class="card-header">
-            <div>
-              <h3 class="card-title">Recent Requests</h3>
-              <p class="card-description">
-                Latest requests handled by this handler.
-              </p>
-            </div>
-            <span class="card-meta">
-              {{ recentRequests.length }}/{{ totalRequestCount }}
-            </span>
-          </div>
-
-          <div v-if="recentRequests.length === 0" class="empty-card">
-            No requests recorded for this handler yet.
-          </div>
-
-          <div v-else class="request-list">
-            <button
-              v-for="entry in recentRequests"
-              :key="entry.id"
-              type="button"
-              class="request-link"
-              :class="{ selected: selectedLogId === entry.id }"
-              @click="emit('view-log-entry', entry.id)"
-            >
-              <div class="request-link-top">
-                <div class="request-status">
-                  <MswBadge
-                    variant="status"
-                    size="sm"
-                    :label="String(entry.status)"
-                  />
-                  <span class="request-scenario">
-                    {{ formatScenarioLabel(entry.scenario) }}
-                  </span>
-                </div>
-                <span class="request-time">
-                  {{ formatFullTime(entry.timestamp) }}
+            <div class="request-link-top">
+              <div class="request-status">
+                <MswBadge
+                  variant="status"
+                  size="sm"
+                  :label="String(entry.status)"
+                />
+                <span class="request-scenario">
+                  {{ formatScenarioLabel(entry.scenario) }}
                 </span>
               </div>
-              <div class="request-link-bottom">
-                <span class="request-method">{{ entry.method }}</span>
-                <span class="request-url" :title="entry.url">{{ entry.url }}</span>
-              </div>
-            </button>
-          </div>
-        </section>
-
-        <section class="panel-card">
-          <div class="card-header">
-            <div>
-              <h3 class="card-title">Response Preview</h3>
-              <p class="card-description">{{ preview.description }}</p>
-            </div>
-            <MswBadge
-              v-if="preview.status !== null"
-              variant="status"
-              :label="String(preview.status)"
-            />
-          </div>
-
-          <div v-if="preview.notice" class="preview-notice">
-            {{ preview.notice }}
-          </div>
-
-          <CodeBlock
-            v-if="preview.body !== null"
-            :code="preview.body"
-            :language="preview.language"
-            max-height="260px"
-          />
-          <div
-            v-else-if="preview.exampleStatusOnly"
-            class="empty-card preview-example-card"
-          >
-            <strong>
-              {{
-                preview.source === "example"
-                  ? "Latest example available."
-                  : "Status preview available."
-              }}
-            </strong>
-            <span v-if="preview.source === 'example'">
-              The latest request did not store a response body, but it returned
-              status {{ preview.exampleStatusOnly }}.
-            </span>
-            <span v-else>
-              The selected configuration returns status
-              {{ preview.exampleStatusOnly }} without a previewable body.
-            </span>
-          </div>
-          <div v-else class="empty-card">
-            No preview data available for the selected configuration.
-          </div>
-        </section>
-
-        <section class="panel-card">
-          <div class="card-header">
-            <div>
-              <h3 class="card-title">Current Configuration</h3>
-              <p class="card-description">
-                Scenario and delay applied to this handler.
-              </p>
-            </div>
-            <MswButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="override-link"
-              @click="emit('open-override', handlerKey)"
-            >
-              Edit override
-            </MswButton>
-          </div>
-
-          <div class="config-grid">
-            <div class="config-field">
-              <label :for="scenarioSelectId">Scenario</label>
-              <MswSelect
-                :id="scenarioSelectId"
-                v-model="currentScenario"
-              >
-                <option
-                  v-for="scenario in metadata.scenarios"
-                  :key="scenario"
-                  :value="scenario"
-                >
-                  {{ formatScenarioOption(scenario) }}
-                </option>
-              </MswSelect>
-            </div>
-
-            <div class="config-field">
-              <label :for="delayInputId">Delay (ms)</label>
-              <div class="delay-input-wrapper">
-                <input
-                  :id="delayInputId"
-                  v-model.number="currentDelay"
-                  type="number"
-                  min="0"
-                  max="10000"
-                  step="50"
-                  class="delay-input"
-                  :disabled="currentScenario === 'passthrough'"
-                />
-                <span class="ms-label">ms</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel-card">
-          <div class="card-header">
-            <div>
-              <h3 class="card-title">Handler Info</h3>
-              <p class="card-description">
-                Useful metadata and request stats.
-              </p>
-            </div>
-          </div>
-
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">Method</span>
-              <span class="info-value">{{ metadata.method }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Default scenario</span>
-              <span class="info-value">{{
-                formatScenarioLabel(metadata.defaultScenario)
-              }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Initial scenario</span>
-              <span class="info-value">{{
-                formatScenarioLabel(metadata.initialScenario)
-              }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Available scenarios</span>
-              <span class="info-value">{{ metadata.scenarios.length }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Custom scenarios</span>
-              <span class="info-value">{{ customScenarioCount }}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Recorded requests</span>
-              <span class="info-value">{{ totalRequestCount }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="info-label">Last request</span>
-              <span class="info-value">
-                {{
-                  latestRequest
-                    ? formatFullTime(latestRequest.timestamp)
-                    : "No requests yet"
-                }}
+              <span class="request-time">
+                {{ formatFullTime(entry.timestamp) }}
               </span>
             </div>
+            <div class="request-link-bottom">
+              <span class="request-method">{{ entry.method }}</span>
+              <span class="request-url" :title="entry.url">{{ entry.url }}</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Response Preview</h3>
+            <p class="card-description">{{ preview.description }}</p>
           </div>
-        </section>
-      </div>
-    </aside>
-  </div>
+          <MswBadge
+            v-if="preview.status !== null"
+            variant="status"
+            :label="String(preview.status)"
+          />
+        </div>
+
+        <div v-if="preview.notice" class="preview-notice">
+          {{ preview.notice }}
+        </div>
+
+        <CodeBlock
+          v-if="preview.body !== null"
+          :code="preview.body"
+          :language="preview.language"
+          max-height="260px"
+        />
+        <div
+          v-else-if="preview.exampleStatusOnly"
+          class="empty-card preview-example-card"
+        >
+          <strong>
+            {{
+              preview.source === "example"
+                ? "Latest example available."
+                : "Status preview available."
+            }}
+          </strong>
+          <span v-if="preview.source === 'example'">
+            The latest request did not store a response body, but it returned
+            status {{ preview.exampleStatusOnly }}.
+          </span>
+          <span v-else>
+            The selected configuration returns status
+            {{ preview.exampleStatusOnly }} without a previewable body.
+          </span>
+        </div>
+        <div v-else class="empty-card">
+          No preview data available for the selected configuration.
+        </div>
+      </section>
+
+      <section class="panel-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Current Configuration</h3>
+            <p class="card-description">
+              Scenario and delay applied to this handler.
+            </p>
+          </div>
+          <MswButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            class="override-link"
+            @click="emit('open-override', handlerKey)"
+          >
+            Edit override
+          </MswButton>
+        </div>
+
+        <div class="config-grid">
+          <div class="config-field">
+            <label :for="scenarioSelectId">Scenario</label>
+            <MswSelect :id="scenarioSelectId" v-model="currentScenario">
+              <option
+                v-for="scenario in metadata.scenarios"
+                :key="scenario"
+                :value="scenario"
+              >
+                {{ formatScenarioOption(scenario) }}
+              </option>
+            </MswSelect>
+          </div>
+
+          <div class="config-field">
+            <label :for="delayInputId">Delay (ms)</label>
+            <div class="delay-input-wrapper">
+              <input
+                :id="delayInputId"
+                v-model.number="currentDelay"
+                type="number"
+                min="0"
+                max="10000"
+                step="50"
+                class="delay-input"
+                :disabled="currentScenario === 'passthrough'"
+              />
+              <span class="ms-label">ms</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Handler Info</h3>
+            <p class="card-description">
+              Useful metadata and request stats.
+            </p>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Method</span>
+            <span class="info-value">{{ metadata.method }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Default scenario</span>
+            <span class="info-value">{{
+              formatScenarioLabel(metadata.defaultScenario)
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Initial scenario</span>
+            <span class="info-value">{{
+              formatScenarioLabel(metadata.initialScenario)
+            }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Available scenarios</span>
+            <span class="info-value">{{ metadata.scenarios.length }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Custom scenarios</span>
+            <span class="info-value">{{ customScenarioCount }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Recorded requests</span>
+            <span class="info-value">{{ totalRequestCount }}</span>
+          </div>
+          <div class="info-item full-width">
+            <span class="info-label">Last request</span>
+            <span class="info-value">
+              {{
+                latestRequest
+                  ? formatFullTime(latestRequest.timestamp)
+                  : "No requests yet"
+              }}
+            </span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </aside>
 </template>
 
 <script setup lang="ts">
@@ -406,22 +401,14 @@ const formatFullTime = (timestamp: number) => {
 </script>
 
 <style scoped>
-.inspector-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  justify-content: flex-end;
-  background: rgba(15, 23, 42, 0.18);
-  backdrop-filter: blur(2px);
-  z-index: 20;
-}
-
 .inspector-panel {
-  width: min(440px, 100%);
+  width: 100%;
+  min-width: 0;
+  max-width: none;
   height: 100%;
   background: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
-  box-shadow: -16px 0 32px rgba(15, 23, 42, 0.18);
+  box-shadow: -12px 0 28px rgba(15, 23, 42, 0.14);
   display: flex;
   flex-direction: column;
 }
