@@ -420,7 +420,7 @@ export class DevToolsPage {
 
   async openHandlerInspector(handlerName: string) {
     const row = await this.getHandlerRow(handlerName);
-    await row.getByRole("button", { name: "Open handler details" }).click();
+    await row.click();
   }
 
   async closeHandlerInspector() {

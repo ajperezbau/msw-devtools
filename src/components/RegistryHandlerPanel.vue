@@ -100,7 +100,9 @@
             </div>
             <div class="request-link-bottom">
               <span class="request-method">{{ entry.method }}</span>
-              <span class="request-url" :title="entry.url">{{ entry.url }}</span>
+              <span class="request-url" :title="entry.url">{{
+                entry.url
+              }}</span>
             </div>
           </button>
         </div>
@@ -157,62 +159,8 @@
       <section class="panel-card">
         <div class="card-header">
           <div>
-            <h3 class="card-title">Current Configuration</h3>
-            <p class="card-description">
-              Scenario and delay applied to this handler.
-            </p>
-          </div>
-          <MswButton
-            type="button"
-            variant="ghost"
-            size="sm"
-            class="override-link"
-            @click="emit('open-override', handlerKey)"
-          >
-            Edit override
-          </MswButton>
-        </div>
-
-        <div class="config-grid">
-          <div class="config-field">
-            <label :for="scenarioSelectId">Scenario</label>
-            <MswSelect :id="scenarioSelectId" v-model="currentScenario">
-              <option
-                v-for="scenario in metadata.scenarios"
-                :key="scenario"
-                :value="scenario"
-              >
-                {{ formatScenarioOption(scenario) }}
-              </option>
-            </MswSelect>
-          </div>
-
-          <div class="config-field">
-            <label :for="delayInputId">Delay (ms)</label>
-            <div class="delay-input-wrapper">
-              <input
-                :id="delayInputId"
-                v-model.number="currentDelay"
-                type="number"
-                min="0"
-                max="10000"
-                step="50"
-                class="delay-input"
-                :disabled="currentScenario === 'passthrough'"
-              />
-              <span class="ms-label">ms</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel-card">
-        <div class="card-header">
-          <div>
             <h3 class="card-title">Handler Info</h3>
-            <p class="card-description">
-              Useful metadata and request stats.
-            </p>
+            <p class="card-description">Useful metadata and request stats.</p>
           </div>
         </div>
 
@@ -266,14 +214,12 @@ import { computed, ref, watch } from "vue";
 import CodeBlock from "./CodeBlock.vue";
 import MswBadge from "./MswBadge.vue";
 import MswButton from "./MswButton.vue";
-import MswSelect from "./MswSelect.vue";
 import {
   activityLog,
   customOverrides,
   customScenarios,
   displayKey,
   getHandlerPreview,
-  handlerDelays,
   scenarioRegistry,
   scenarioState,
 } from "../mswRegistry";
@@ -287,30 +233,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "view-log-entry", entryId: string): void;
-  (e: "open-override", key: string): void;
 }>();
 
 const metadata = computed(() => scenarioRegistry[props.handlerKey]!);
 
-const scenarioSelectId = computed(
-  () => `handler-scenario-${props.handlerKey.replace(/\s+/g, "-")}`,
-);
-const delayInputId = computed(
-  () => `handler-delay-${props.handlerKey.replace(/\s+/g, "-")}`,
-);
-
 const currentScenario = computed({
   get: () =>
-    scenarioState[props.handlerKey] ?? metadata.value?.defaultScenario ?? "default",
+    scenarioState[props.handlerKey] ??
+    metadata.value?.defaultScenario ??
+    "default",
   set: (value: string) => {
     scenarioState[props.handlerKey] = value;
-  },
-});
-
-const currentDelay = computed({
-  get: () => handlerDelays[props.handlerKey] ?? 0,
-  set: (value: number) => {
-    handlerDelays[props.handlerKey] = Number.isFinite(value) ? value : 0;
   },
 });
 
@@ -377,14 +310,9 @@ watch(
 const formatScenarioLabel = (scenario: string) => {
   if (scenario === "passthrough") return "Real API";
   if (scenario === "🌐 Real API (Recorded)") return "Real API (Recorded)";
-  if (scenario === "🌐 Real API (Not Recorded)") return "Real API (Not Recorded)";
+  if (scenario === "🌐 Real API (Not Recorded)")
+    return "Real API (Not Recorded)";
   if (scenario === "❌ Real API (Error Recorded)") return "Real API (Error)";
-  return scenario;
-};
-
-const formatScenarioOption = (scenario: string) => {
-  if (scenario === "passthrough") return "Real API 🌐";
-  if (customScenarios[props.handlerKey]?.[scenario]) return `${scenario} ✨`;
   return scenario;
 };
 
@@ -610,59 +538,6 @@ const formatFullTime = (timestamp: number) => {
   padding: 0.75rem 0.875rem;
   font-size: 0.8125rem;
   line-height: 1.5;
-}
-
-.config-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.875rem;
-}
-
-.config-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.config-field label {
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.delay-input {
-  width: 100%;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
-  padding: 0.55rem 0.65rem;
-  font-size: 0.875rem;
-  color: var(--text-main);
-  background: var(--input-bg);
-}
-
-.delay-input:focus {
-  outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-
-.delay-input:disabled {
-  opacity: 0.5;
-}
-
-.delay-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.ms-label {
-  color: var(--text-tertiary);
-  font-size: 0.75rem;
-}
-
-.override-link.msw-button {
-  padding-inline: 0;
 }
 
 .info-grid {

@@ -124,220 +124,194 @@
       </div>
     </div>
 
-    <div
-      class="registry-workspace"
-      :class="{ 'has-inspector': hasInspector }"
-    >
+    <div class="registry-workspace" :class="{ 'has-inspector': hasInspector }">
       <div
         class="registry-container"
         :class="{ 'has-inspector': hasInspector }"
       >
         <table class="registry-table">
-        <thead>
-          <tr>
-            <th v-if="isSelectionMode" class="col-selection">
-              <MswCheckbox v-model="isAllSelected" />
-            </th>
-            <th class="col-status"></th>
-            <th class="col-method">Method</th>
-            <th class="col-info">Handler</th>
-            <th class="col-scenario">Active Scenario</th>
-            <th class="col-delay">Delay (ms)</th>
-            <th class="col-actions">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="filteredRegistryKeys.length === 0">
-            <td :colspan="isSelectionMode ? 8 : 7" class="empty-state">
-              No handlers found matching your search.
-            </td>
-          </tr>
-          <tr
-            v-for="key in filteredRegistryKeys"
-            :key="key"
-            :class="{
-              'is-modified': isModified(key),
-              'is-selected': isSelectionMode && selectedKeys.has(key),
-              'is-inspected': selectedInspectorKey === key,
-            }"
-            @click="isSelectionMode ? toggleKeySelection(key) : null"
-          >
-            <td v-if="isSelectionMode" class="col-selection">
-              <MswCheckbox
-                :modelValue="selectedKeys.has(key)"
-                @update:modelValue="toggleKeySelection(key)"
-                @click.stop
-              />
-            </td>
-            <td class="col-status">
-              <div class="status-indicators">
-                <span
-                  v-if="scenarioRegistry[key]?.isNative"
-                  class="native-indicator"
-                  title="Native MSW handler (originally in setupWorker)"
-                >
-                  N
-                </span>
-                <span
-                  v-if="
-                    customOverrides[key]?.enabled &&
-                    scenarioState[key] !== 'passthrough'
-                  "
-                  class="override-indicator"
-                  title="Manual override active"
-                >
-                  M
-                </span>
-                <span
-                  v-else-if="isModified(key)"
-                  class="modified-indicator"
-                  title="Scenario modified"
-                ></span>
-              </div>
-            </td>
-            <td class="col-method">
-              <MswBadge
-                v-if="scenarioRegistry[key]"
-                variant="method"
-                :label="scenarioRegistry[key].method"
-              />
-            </td>
-            <td class="col-info">
-              <div class="handler-info" v-if="scenarioRegistry[key]">
-                <span class="key-text">{{ displayKey(key) }}</span>
-                <div
-                  v-if="scenarioRegistry[key].url !== key"
-                  class="url-wrapper"
-                  :title="scenarioRegistry[key].url"
-                >
-                  {{ scenarioRegistry[key].url }}
-                </div>
-              </div>
-            </td>
-            <td class="col-scenario">
-              <MswSelect
-                v-model="scenarioState[key]"
-                size="sm"
-                :class="{ 'is-modified': isModified(key) }"
-                @click.stop
-              >
-                <option
-                  v-for="scenario in scenarioRegistry[key]?.scenarios"
-                  :key="scenario"
-                  :value="scenario"
-                >
-                  {{ scenario === "passthrough" ? "Real API" : scenario
-                  }}{{
-                    scenario === "passthrough"
-                      ? " 🌐"
-                      : isCustomScenario(key, scenario)
-                        ? " ✨"
-                        : ""
-                  }}
-                </option>
-              </MswSelect>
-            </td>
-            <td class="col-delay">
-              <div class="handler-delay-wrapper">
-                <input
-                  type="number"
-                  v-model.number="handlerDelays[key]"
-                  min="0"
-                  max="10000"
-                  step="50"
-                  placeholder="0"
-                  class="handler-delay-input"
-                  :disabled="scenarioState[key] === 'passthrough'"
-                  :style="{
-                    opacity: scenarioState[key] === 'passthrough' ? '0.5' : '1',
-                  }"
+          <thead>
+            <tr>
+              <th v-if="isSelectionMode" class="col-selection">
+                <MswCheckbox v-model="isAllSelected" />
+              </th>
+              <th class="col-status"></th>
+              <th class="col-method">Method</th>
+              <th class="col-info">Handler</th>
+              <th class="col-scenario">Active Scenario</th>
+              <th class="col-delay">Delay (ms)</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="filteredRegistryKeys.length === 0">
+              <td :colspan="isSelectionMode ? 8 : 7" class="empty-state">
+                No handlers found matching your search.
+              </td>
+            </tr>
+            <tr
+              v-for="key in filteredRegistryKeys"
+              :key="key"
+              :class="{
+                'is-modified': isModified(key),
+                'is-selected': isSelectionMode && selectedKeys.has(key),
+                'is-inspected': selectedInspectorKey === key,
+                'is-clickable': !isSelectionMode,
+              }"
+              @click="handleRowClick(key)"
+            >
+              <td v-if="isSelectionMode" class="col-selection">
+                <MswCheckbox
+                  :modelValue="selectedKeys.has(key)"
+                  @update:modelValue="toggleKeySelection(key)"
                   @click.stop
                 />
-                <span class="ms-label">ms</span>
-              </div>
-            </td>
-            <td class="col-actions">
-              <div class="action-buttons">
-                <MswButton
-                  type="button"
-                  variant="icon"
-                  size="sm"
-                  @click.stop="openInspector(key)"
-                  class="icon-button"
-                  :class="{ active: selectedInspectorKey === key }"
-                  title="Open handler details"
-                  aria-label="Open handler details"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              </td>
+              <td class="col-status">
+                <div class="status-indicators">
+                  <span
+                    v-if="scenarioRegistry[key]?.isNative"
+                    class="native-indicator"
+                    title="Native MSW handler (originally in setupWorker)"
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </MswButton>
-                <MswButton
-                  type="button"
-                  variant="icon"
-                  size="sm"
-                  @click.stop="emit('open-override', key)"
-                  class="icon-button"
-                  :class="{
-                    'has-override':
+                    N
+                  </span>
+                  <span
+                    v-if="
                       customOverrides[key]?.enabled &&
-                      scenarioState[key] !== 'passthrough',
-                  }"
-                  title="Custom response override"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                      scenarioState[key] !== 'passthrough'
+                    "
+                    class="override-indicator"
+                    title="Manual override active"
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                </MswButton>
-                <MswButton
-                  type="button"
-                  variant="icon"
+                    M
+                  </span>
+                  <span
+                    v-else-if="isModified(key)"
+                    class="modified-indicator"
+                    title="Scenario modified"
+                  ></span>
+                </div>
+              </td>
+              <td class="col-method">
+                <MswBadge
+                  v-if="scenarioRegistry[key]"
+                  variant="method"
+                  :label="scenarioRegistry[key].method"
+                />
+              </td>
+              <td class="col-info">
+                <div class="handler-info" v-if="scenarioRegistry[key]">
+                  <span class="key-text">{{ displayKey(key) }}</span>
+                  <div
+                    v-if="scenarioRegistry[key].url !== key"
+                    class="url-wrapper"
+                    :title="scenarioRegistry[key].url"
+                  >
+                    {{ scenarioRegistry[key].url }}
+                  </div>
+                </div>
+              </td>
+              <td class="col-scenario">
+                <MswSelect
+                  v-model="scenarioState[key]"
                   size="sm"
-                  @click.stop="emit('view-log', key)"
-                  class="icon-button"
-                  title="View logs for this handler"
+                  :class="{ 'is-modified': isModified(key) }"
+                  @click.stop
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                  <option
+                    v-for="scenario in scenarioRegistry[key]?.scenarios"
+                    :key="scenario"
+                    :value="scenario"
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                    />
-                  </svg>
-                </MswButton>
-              </div>
-            </td>
-          </tr>
-        </tbody>
+                    {{ scenario === "passthrough" ? "Real API" : scenario
+                    }}{{
+                      scenario === "passthrough"
+                        ? " 🌐"
+                        : isCustomScenario(key, scenario)
+                          ? " ✨"
+                          : ""
+                    }}
+                  </option>
+                </MswSelect>
+              </td>
+              <td class="col-delay">
+                <div class="handler-delay-wrapper">
+                  <input
+                    type="number"
+                    v-model.number="handlerDelays[key]"
+                    min="0"
+                    max="10000"
+                    step="50"
+                    placeholder="0"
+                    class="handler-delay-input"
+                    :disabled="scenarioState[key] === 'passthrough'"
+                    :style="{
+                      opacity:
+                        scenarioState[key] === 'passthrough' ? '0.5' : '1',
+                    }"
+                    @click.stop
+                  />
+                  <span class="ms-label">ms</span>
+                </div>
+              </td>
+              <td class="col-actions">
+                <div class="action-buttons">
+                  <MswButton
+                    type="button"
+                    variant="icon"
+                    size="sm"
+                    @click.stop="emit('open-override', key)"
+                    class="icon-button"
+                    :class="{
+                      'has-override':
+                        customOverrides[key]?.enabled &&
+                        scenarioState[key] !== 'passthrough',
+                    }"
+                    title="Custom response override"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                  </MswButton>
+                  <MswButton
+                    type="button"
+                    variant="icon"
+                    size="sm"
+                    @click.stop="emit('view-log', key)"
+                    class="icon-button"
+                    title="View logs for this handler"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                      />
+                    </svg>
+                  </MswButton>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
       <Transition name="inspector-shell">
@@ -346,7 +320,6 @@
             :handler-key="inspectedHandlerKey"
             :selected-log-id="selectedLogId"
             @close="selectedInspectorKey = null"
-            @open-override="emit('open-override', $event)"
             @view-log-entry="emit('view-log-entry', $event)"
           />
         </div>
@@ -429,8 +402,7 @@ const focusHandler = (key: string) => {
 };
 
 const openInspector = (key: string) => {
-  selectedInspectorKey.value =
-    selectedInspectorKey.value === key ? null : key;
+  selectedInspectorKey.value = selectedInspectorKey.value === key ? null : key;
 };
 
 const setFilter = (query: string) => {
@@ -482,6 +454,15 @@ const toggleKeySelection = (key: string) => {
   } else {
     selectedKeys.value.add(key);
   }
+};
+
+const handleRowClick = (key: string) => {
+  if (isSelectionMode.value) {
+    toggleKeySelection(key);
+    return;
+  }
+
+  openInspector(key);
 };
 
 const selectAllVisible = () => {
@@ -912,6 +893,10 @@ watch(inspectedHandlerKey, (key) => {
   background-color: var(--table-hover);
 }
 
+.registry-table tr.is-clickable {
+  cursor: pointer;
+}
+
 .registry-table tr.is-selected {
   background-color: var(--bg-tertiary) !important;
 }
@@ -1022,7 +1007,7 @@ watch(inspectedHandlerKey, (key) => {
 }
 
 .col-actions {
-  width: 132px;
+  width: 88px;
   text-align: right;
 }
 
