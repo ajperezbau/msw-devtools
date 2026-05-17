@@ -40,6 +40,25 @@ export interface HandlerMetadata {
   isNative?: boolean;
 }
 
+export type HandlerPreviewSource =
+  | "override"
+  | "custom"
+  | "code"
+  | "example"
+  | "unavailable";
+
+export type HandlerPreviewLanguage = "json" | "text";
+
+export interface HandlerPreviewResult {
+  source: HandlerPreviewSource;
+  description: string;
+  notice: string | null;
+  status: number | null;
+  body: string | object | null;
+  language: HandlerPreviewLanguage;
+  exampleStatusOnly: number | null;
+}
+
 /**
  * Represents a single request/response log entry.
  */

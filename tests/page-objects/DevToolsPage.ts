@@ -10,6 +10,7 @@ export class DevToolsPage {
   readonly activityLogSearchInput: Locator;
   readonly globalDelayInput: Locator;
   readonly globalDelayNumberInput: Locator;
+  readonly handlerInspector: Locator;
   readonly exportButton: Locator;
   readonly importButton: Locator;
   readonly fetchUsersButton: Locator;
@@ -33,6 +34,7 @@ export class DevToolsPage {
     this.globalDelayNumberInput = this.dialog.getByLabel(
       "Global delay in milliseconds",
     );
+    this.handlerInspector = this.dialog.locator(".inspector-panel");
     this.exportButton = this.dialog.getByRole("button", {
       name: "Export Scenarios",
     });
@@ -414,6 +416,54 @@ export class DevToolsPage {
   async openLogForHandler(handlerName: string) {
     const row = await this.getHandlerRow(handlerName);
     await row.getByTitle("View logs for this handler").click();
+  }
+
+  async openHandlerInspector(handlerName: string) {
+    const row = await this.getHandlerRow(handlerName);
+    await row.click();
+  }
+
+  async closeHandlerInspector() {
+    await this.handlerInspector
+      .getByRole("button", { name: "Close handler details" })
+      .click();
+  }
+
+  async expectHandlerInspectorVisible(handlerName: string) {
+    await expect(this.handlerInspector).toBeVisible();
+    await expect(
+      this.handlerInspector.getByRole("heading", { name: handlerName }),
+    ).toBeVisible();
+  }
+
+  async expectHandlerInspectorHidden() {
+    await expect(this.handlerInspector).not.toBeVisible();
+  }
+
+  async openLatestRequestFromInspector() {
+    await this.handlerInspector.locator(".request-link").first().click();
+  }
+
+  async expectHandlerInspectorText(text: string | RegExp) {
+    await expect(this.handlerInspector.getByText(text)).toBeVisible();
+  }
+
+  async expandHandlerResponsePreview() {
+    await this.handlerInspector
+      .getByRole("button", { name: "Expand response preview" })
+      .click();
+  }
+
+  async expectExpandedHandlerResponsePreviewVisible() {
+    await expect(
+      this.page.getByRole("dialog", { name: "Expanded Response Preview" }),
+    ).toBeVisible();
+  }
+
+  async expectExpandedHandlerResponsePreviewHidden() {
+    await expect(
+      this.page.getByRole("dialog", { name: "Expanded Response Preview" }),
+    ).not.toBeVisible();
   }
 
   async viewSelectedLogInRegistry() {
